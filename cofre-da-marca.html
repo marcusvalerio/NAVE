@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NAVE — Cofre da Marca</title>
+  <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111111;
+      --surface-2: #161616;
+      --border: #1e1e1e;
+      --border-hover: #2e2e2e;
+      --text: #f0f0f0;
+      --text-secondary: #888;
+      --text-muted: #444;
+      --accent: #3b82f6;
+      --accent-glow: rgba(59,130,246,0.12);
+      --accent-border: rgba(59,130,246,0.25);
+      --success: #22c55e;
+      --success-dim: rgba(34,197,94,0.1);
+      --radius: 10px;
+      --radius-sm: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── TYPOGRAPHY ── */
+    .display { font-family: 'Funnel Display', sans-serif; }
+
+    /* ══════════════════════════════════════════
+       INTRO SCREEN
+    ══════════════════════════════════════════ */
+    #intro {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    #intro.fade-out {
+      animation: introFadeOut 0.7s ease forwards;
+    }
+
+    @keyframes introFadeOut {
+      0%   { opacity: 1; }
+      100% { opacity: 0; pointer-events: none; }
+    }
+
+    .intro-logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    .intro-letter {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      opacity: 0;
+      transform: translateY(24px);
+      display: inline-block;
+    }
+
+    .intro-letter.dot {
+      color: var(--accent);
+      letter-spacing: 0;
+    }
+
+    .intro-letter.animate {
+      animation: letterUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes letterUp {
+      0%   { opacity: 0; transform: translateY(24px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .intro-tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      opacity: 0;
+      margin-top: 14px;
+      animation: taglineIn 0.6s ease 1s forwards;
+    }
+
+    @keyframes taglineIn {
+      0%   { opacity: 0; transform: translateY(8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    .intro-line {
+      width: 0;
+      height: 1px;
+      background: var(--accent);
+      margin-top: 24px;
+      box-shadow: 0 0 10px var(--accent);
+      animation: lineExpand 0.6s ease 0.9s forwards;
+    }
+
+    @keyframes lineExpand {
+      0%   { width: 0; opacity: 0; }
+      100% { width: 80px; opacity: 1; }
+    }
+
+    /* ══════════════════════════════════════════
+       ONBOARDING
+    ══════════════════════════════════════════ */
+    #onboarding {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #onboarding.visible { opacity: 1; }
+    #onboarding.hidden { display: none; }
+
+    .ob-header {
+      padding: 28px 24px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--text);
+    }
+    .brand span { color: var(--accent); }
+
+    .ob-step-indicator {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+    }
+
+    .ob-progress {
+      margin: 20px 24px 0;
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .ob-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .ob-body {
+      flex: 1;
+      padding: 40px 24px 24px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .ob-step { display: none; flex-direction: column; flex: 1; }
+    .ob-step.active { display: flex; }
+
+    .ob-step-label {
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .ob-step-title {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .ob-step-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .field-label {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .field-input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 20px;
+    }
+    .field-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .field-input::placeholder { color: var(--text-muted); }
+
+    textarea.field-input {
+      resize: none;
+      height: 90px;
+      line-height: 1.5;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+    .chip:hover { border-color: var(--border-hover); color: var(--text); }
+    .chip.selected {
+      border-color: var(--accent-border);
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+
+    .chip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .chip-card {
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      position: relative;
+    }
+    .chip-card:hover { border-color: var(--border-hover); color: var(--text); }
+    .chip-card.selected {
+      border-color: var(--accent-border);
+      background: var(--accent-glow);
+      color: var(--text);
+    }
+    .chip-card.selected::after {
+      content: '';
+      position: absolute;
+      top: 8px; right: 8px;
+      width: 6px; height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+    .chip-card-label { font-weight: 500; margin-bottom: 2px; }
+    .chip-card-sub { font-size: 11px; color: var(--text-muted); }
+    .chip-card.selected .chip-card-sub { color: var(--text-secondary); }
+
+    .words-row { display: flex; gap: 8px; margin-bottom: 20px; }
+    .words-row .field-input { margin-bottom: 0; flex: 1; text-align: center; }
+
+    .ob-nav {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 24px;
+    }
+
+    .btn-back {
+      flex: 0 0 48px;
+      height: 48px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-back:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .btn-next {
+      flex: 1;
+      height: 48px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .btn-next:hover { opacity: 0.88; }
+
+    /* ══════════════════════════════════════════
+       DASHBOARD
+    ══════════════════════════════════════════ */
+    #dashboard { display: none; flex-direction: column; min-height: 100vh; }
+    #dashboard.active { display: flex; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-brand {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+    }
+    .topbar-brand span { color: var(--accent); }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .icon-btn:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .dash-content { padding: 24px 20px; flex: 1; }
+
+    .section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    /* Nav tabs */
+    .nav-tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      margin-bottom: 24px;
+    }
+
+    .nav-tab {
+      flex: 1;
+      height: 34px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.02em;
+    }
+    .nav-tab:hover { color: var(--text-secondary); }
+    .nav-tab.active {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Tab panels */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Cofre card */
+    .cofre-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .cofre-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cofre-title {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .edit-btn {
+      font-size: 11px;
+      color: var(--accent);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .edit-btn:hover { background: var(--accent-glow); }
+
+    .cofre-row {
+      display: flex;
+      align-items: flex-start;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+    .cofre-row:last-child { border-bottom: none; }
+
+    .cofre-key {
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+      width: 96px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    .cofre-val { font-size: 13px; color: var(--text); flex: 1; line-height: 1.5; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 100px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .tone-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid var(--accent-border);
+      border-radius: 100px;
+      padding: 4px 12px;
+    }
+    .tone-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+
+    /* Module list */
+    .module-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .module-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .module-icon {
+      width: 32px; height: 32px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .module-icon svg { width: 14px; height: 14px; stroke: var(--text-muted); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+    .module-info { flex: 1; }
+    .module-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .module-desc { font-size: 11px; color: var(--text-muted); }
+
+    .module-status {
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Inter', sans-serif;
+    }
+    .module-status.done {
+      color: var(--success);
+      background: var(--success-dim);
+      border-color: rgba(34,197,94,0.2);
+    }
+
+    /* ══════════════════════════════════════════
+       GERADOR DE CONTEUDO
+    ══════════════════════════════════════════ */
+    .gerador-wrap { display: flex; flex-direction: column; gap: 12px; }
+
+    .api-field {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+    }
+
+    .api-label {
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .api-row { display: flex; gap: 8px; align-items: center; }
+
+    .api-input {
+      flex: 1;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .api-input:focus { border-color: var(--accent); }
+    .api-input::placeholder { color: var(--text-muted); }
+
+    .api-btn {
+      height: 38px;
+      padding: 0 14px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .api-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .api-btn.connected {
+      color: var(--success);
+      border-color: rgba(34,197,94,0.3);
+      background: var(--success-dim);
+    }
+
+    .gen-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .gen-card-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .gen-card-title {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .gen-card-sub { font-size: 11px; color: var(--text-muted); }
+
+    .gen-card-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+    .gen-select {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23444' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .gen-select:focus { border-color: var(--accent); }
+    .gen-select option { background: var(--surface-2); }
+
+    .gen-textarea {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      resize: none;
+      height: 80px;
+      line-height: 1.5;
+      transition: border-color 0.2s;
+    }
+    .gen-textarea:focus { border-color: var(--accent); }
+    .gen-textarea::placeholder { color: var(--text-muted); }
+
+    .gen-btn {
+      width: 100%;
+      height: 46px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+      position: relative;
+    }
+    .gen-btn:hover { opacity: 0.88; }
+    .gen-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Output */
+    .output-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: none;
+    }
+    .output-card.visible { display: block; }
+
+    .output-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .output-title {
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .copy-btn {
+      font-size: 11px;
+      color: var(--accent);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: var(--accent-glow); }
+
+    .output-body {
+      padding: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      min-height: 80px;
+    }
+
+    /* Loading */
+    .loading-bar {
+      height: 2px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 0 16px 16px;
+      display: none;
+    }
+    .loading-bar.visible { display: block; }
+    .loading-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      animation: loading 1.4s ease-in-out infinite;
+      box-shadow: 0 0 8px var(--accent);
+    }
+    @keyframes loading {
+      0% { width: 0%; margin-left: 0; }
+      50% { width: 60%; margin-left: 20%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+
+    /* ══════════════════════════════════════════
+       SETTINGS MODAL
+    ══════════════════════════════════════════ */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; align-items: flex-end; }
+
+    .modal-sheet {
+      width: 100%;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 16px 16px 0 0;
+      padding: 0 0 40px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-handle {
+      width: 36px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 12px auto 0;
+    }
+
+    .modal-header {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-family: 'Funnel Display', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .modal-close {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+    .modal-close:hover { border-color: var(--border-hover); color: var(--text); }
+
+    .modal-body { padding: 20px; }
+
+    .modal-field { margin-bottom: 18px; }
+
+    .modal-section-title {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 600;
+      margin: 24px 0 12px;
+    }
+    .modal-section-title:first-child { margin-top: 0; }
+
+    .save-btn {
+      width: 100%;
+      height: 48px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .save-btn:hover { opacity: 0.88; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      font-size: 13px;
+      color: var(--text);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast .t-check { color: var(--success); margin-right: 6px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     INTRO
+══════════════════════════════════ -->
+<div id="intro">
+  <div class="intro-logo-wrap">
+    <span class="intro-letter" data-delay="0">N</span>
+    <span class="intro-letter" data-delay="80">A</span>
+    <span class="intro-letter" data-delay="160">V</span>
+    <span class="intro-letter" data-delay="240">E</span>
+    <span class="intro-letter dot" data-delay="360">.</span>
+  </div>
+  <div class="intro-line"></div>
+  <div class="intro-tagline">Marketing para barbearias</div>
+</div>
+
+<!-- ══════════════════════════════════
+     ONBOARDING
+══════════════════════════════════ -->
+<div id="onboarding">
+  <div class="ob-header">
+    <div class="brand">NAVE<span>.</span></div>
+    <div class="ob-step-indicator" id="step-indicator">1 de 6</div>
+  </div>
+  <div class="ob-progress">
+    <div class="ob-progress-fill" id="ob-progress" style="width:16.6%"></div>
+  </div>
+
+  <div class="ob-body">
+
+    <!-- STEP 1 -->
+    <div class="ob-step active" data-step="1">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Como se chama sua barbearia?</div>
+      <div class="ob-step-desc">Essas informações identificam sua marca dentro da plataforma.</div>
+      <div class="field-label">Nome da barbearia</div>
+      <input class="field-input" id="f-nome" type="text" placeholder="Ex: Barbearia Nordeste" />
+      <div class="field-label">Cidade</div>
+      <input class="field-input" id="f-cidade" type="text" placeholder="Ex: São Paulo, SP" />
+      <div class="ob-nav">
+        <button class="btn-next" onclick="nextStep()">Continuar</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="ob-step" data-step="2">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Como você opera?</div>
+      <div class="ob-step-desc">Isso define o tom e a abordagem do conteúdo gerado.</div>
+      <div class="chip-grid" id="chips-tipo">
+        <div class="chip-card" onclick="selectChip('chips-tipo',this,false)"><div class="chip-card-label">Autônomo</div><div class="chip-card-sub">Trabalho sozinho ou em estúdio compartilhado</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tipo',this,false)"><div class="chip-card-label">Barbearia própria</div><div class="chip-card-sub">Tenho equipe e espaço próprio</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tipo',this,false)"><div class="chip-card-label">Barbearia premium</div><div class="chip-card-sub">Posicionamento elevado, ticket alto</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tipo',this,false)"><div class="chip-card-label">Em crescimento</div><div class="chip-card-sub">Estou construindo minha identidade</div></div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-back" onclick="prevStep()">←</button>
+        <button class="btn-next" onclick="nextStep()">Continuar</button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="ob-step" data-step="3">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Quais serviços você oferece?</div>
+      <div class="ob-step-desc">Selecione todos que se aplicam.</div>
+      <div class="chips" id="chips-servicos">
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Corte masculino</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Barba</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Pigmentação</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Relaxamento</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Sobrancelha</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Hidratação</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Luzes / Coloração</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Dia do noivo</div>
+        <div class="chip" onclick="selectChip('chips-servicos',this,true)">Atendimento a domicílio</div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-back" onclick="prevStep()">←</button>
+        <button class="btn-next" onclick="nextStep()">Continuar</button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="ob-step" data-step="4">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Quem é o seu cliente?</div>
+      <div class="ob-step-desc">Selecione os perfis que mais frequentam sua barbearia.</div>
+      <div class="chips" id="chips-publico">
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Jovens (18–25)</div>
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Adultos (26–40)</div>
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Executivos</div>
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Família</div>
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Streetwear / cultura urbana</div>
+        <div class="chip" onclick="selectChip('chips-publico',this,true)">Premium / alto padrão</div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-back" onclick="prevStep()">←</button>
+        <button class="btn-next" onclick="nextStep()">Continuar</button>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="ob-step" data-step="5">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Como sua marca fala?</div>
+      <div class="ob-step-desc">Escolha o tom que melhor representa sua comunicação.</div>
+      <div class="chip-grid" id="chips-tom">
+        <div class="chip-card" onclick="selectChip('chips-tom',this,false)"><div class="chip-card-label">Descontraído</div><div class="chip-card-sub">Próximo, informal, direto</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tom',this,false)"><div class="chip-card-label">Profissional</div><div class="chip-card-sub">Claro, respeitoso, confiável</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tom',this,false)"><div class="chip-card-label">Premium</div><div class="chip-card-sub">Sofisticado, elegante, exclusivo</div></div>
+        <div class="chip-card" onclick="selectChip('chips-tom',this,false)"><div class="chip-card-label">Streetwear</div><div class="chip-card-sub">Autêntico, cultural, identitário</div></div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-back" onclick="prevStep()">←</button>
+        <button class="btn-next" onclick="nextStep()">Continuar</button>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="ob-step" data-step="6">
+      <div class="ob-step-label">Cofre da Marca</div>
+      <div class="ob-step-title">Três palavras que definem sua marca</div>
+      <div class="ob-step-desc">Pense como você quer que as pessoas descrevam sua barbearia.</div>
+      <div class="words-row">
+        <input class="field-input" id="f-palavra1" type="text" placeholder="Preciso" maxlength="20" />
+        <input class="field-input" id="f-palavra2" type="text" placeholder="Autêntico" maxlength="20" />
+        <input class="field-input" id="f-palavra3" type="text" placeholder="Moderno" maxlength="20" />
+      </div>
+      <div class="field-label">Redes sociais ativas</div>
+      <div class="chips" id="chips-redes">
+        <div class="chip" onclick="selectChip('chips-redes',this,true)">Instagram</div>
+        <div class="chip" onclick="selectChip('chips-redes',this,true)">WhatsApp</div>
+        <div class="chip" onclick="selectChip('chips-redes',this,true)">TikTok</div>
+        <div class="chip" onclick="selectChip('chips-redes',this,true)">Facebook</div>
+        <div class="chip" onclick="selectChip('chips-redes',this,true)">YouTube</div>
+      </div>
+      <div class="ob-nav">
+        <button class="btn-back" onclick="prevStep()">←</button>
+        <button class="btn-next" onclick="finishOnboarding()">Salvar Cofre da Marca</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     DASHBOARD
+══════════════════════════════════ -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="topbar-brand">NAVE<span>.</span></div>
+    <div style="display:flex;gap:8px;">
+      <button class="icon-btn" onclick="openSettings()">cfg</button>
+    </div>
+  </div>
+
+  <div class="dash-content">
+
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('visao-geral')">Visao Geral</button>
+      <button class="nav-tab" onclick="switchTab('gerador')">Gerador</button>
+      <button class="nav-tab" onclick="switchTab('modulos')">Modulos</button>
+    </div>
+
+    <!-- ABA: VISAO GERAL -->
+    <div class="tab-panel active" id="tab-visao-geral">
+      <div class="section-label">Seu perfil</div>
+      <div class="cofre-card">
+        <div class="cofre-header">
+          <div class="cofre-title">Cofre da Marca</div>
+          <button class="edit-btn" onclick="openSettings()">Editar</button>
+        </div>
+        <div id="cofre-preview"></div>
+      </div>
+    </div>
+
+    <!-- ABA: GERADOR -->
+    <div class="tab-panel" id="tab-gerador">
+      <div class="gerador-wrap">
+
+        <!-- API Key -->
+        <div class="api-field">
+          <div class="api-label">Chave de API</div>
+          <div class="api-row">
+            <input class="api-input" id="api-key" type="password" placeholder="sk-ant-api03-..." />
+            <button class="api-btn" id="api-connect-btn" onclick="connectAPI()">Conectar</button>
+          </div>
+        </div>
+
+        <!-- Gerador -->
+        <div class="gen-card">
+          <div class="gen-card-header">
+            <div class="gen-card-title">Gerador de Conteudo</div>
+            <div class="gen-card-sub">Alimentado pelo seu Cofre da Marca</div>
+          </div>
+          <div class="gen-card-body">
+
+            <div>
+              <div class="field-label">Tipo de conteudo</div>
+              <select class="gen-select" id="gen-tipo">
+                <option value="legenda_feed">Legenda para feed (Instagram)</option>
+                <option value="legenda_story">Texto para story</option>
+                <option value="mensagem_whatsapp">Mensagem para WhatsApp</option>
+                <option value="campanha">Ideia de campanha</option>
+                <option value="direcao_criativa">Direcao criativa</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="field-label">Objetivo</div>
+              <select class="gen-select" id="gen-objetivo">
+                <option value="autoridade">Construir autoridade</option>
+                <option value="promocao">Divulgar promocao</option>
+                <option value="antes_depois">Antes e depois</option>
+                <option value="depoimento">Pedir depoimento</option>
+                <option value="campanha_sazonal">Campanha sazonal</option>
+                <option value="identidade">Mostrar identidade da marca</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="field-label">Contexto adicional (opcional)</div>
+              <textarea class="gen-textarea" id="gen-contexto" placeholder="Ex: Estamos na semana da Copa, quero trazer os barbeiros como protagonistas em uma estetica editorial pre-jogo..."></textarea>
+            </div>
+
+            <button class="gen-btn" id="gen-btn" onclick="gerarConteudo()" disabled>
+              Gerar conteudo
+            </button>
+          </div>
+        </div>
+
+        <!-- Output -->
+        <div class="output-card" id="output-card">
+          <div class="output-header">
+            <div class="output-title">Conteudo gerado</div>
+            <button class="copy-btn" onclick="copiarConteudo()">Copiar</button>
+          </div>
+          <div class="loading-bar" id="loading-bar"><div class="loading-fill"></div></div>
+          <div class="output-body" id="output-body"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ABA: MODULOS -->
+    <div class="tab-panel" id="tab-modulos">
+      <div class="section-label">Status dos modulos</div>
+      <div class="module-list">
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="module-info">
+            <div class="module-name">Cofre da Marca</div>
+            <div class="module-desc">Identidade e posicionamento</div>
+          </div>
+          <div class="module-status done">Ativo</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="module-info">
+            <div class="module-name">Gerador de Conteudo</div>
+            <div class="module-desc">Legendas, CTAs e direcao criativa</div>
+          </div>
+          <div class="module-status done">Ativo</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="module-info">
+            <div class="module-name">Calendario Inteligente</div>
+            <div class="module-desc">Plano do mes gerado automaticamente</div>
+          </div>
+          <div class="module-status">Em breve</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <div class="module-info">
+            <div class="module-name">Campanhas</div>
+            <div class="module-desc">Datas sazonais planejadas</div>
+          </div>
+          <div class="module-status">Em breve</div>
+        </div>
+        <div class="module-card">
+          <div class="module-icon">
+            <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          </div>
+          <div class="module-info">
+            <div class="module-name">Execucao</div>
+            <div class="module-desc">Tracker de status e progresso</div>
+          </div>
+          <div class="module-status">Em breve</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SETTINGS MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="settings-modal" onclick="closeSettingsOutside(event)">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Cofre da Marca</div>
+      <button class="modal-close" onclick="closeSettings()">x</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section-title">Identificacao</div>
+      <div class="modal-field">
+        <div class="field-label">Nome da barbearia</div>
+        <input class="field-input" id="s-nome" type="text" />
+      </div>
+      <div class="modal-field">
+        <div class="field-label">Cidade</div>
+        <input class="field-input" id="s-cidade" type="text" />
+      </div>
+      <div class="modal-section-title">Operacao</div>
+      <div class="chip-grid" id="s-chips-tipo">
+        <div class="chip-card" onclick="selectChip('s-chips-tipo',this,false)"><div class="chip-card-label">Autonomo</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tipo',this,false)"><div class="chip-card-label">Barbearia propria</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tipo',this,false)"><div class="chip-card-label">Barbearia premium</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tipo',this,false)"><div class="chip-card-label">Em crescimento</div></div>
+      </div>
+      <div class="modal-section-title">Tom de voz</div>
+      <div class="chip-grid" id="s-chips-tom">
+        <div class="chip-card" onclick="selectChip('s-chips-tom',this,false)"><div class="chip-card-label">Descontraido</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tom',this,false)"><div class="chip-card-label">Profissional</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tom',this,false)"><div class="chip-card-label">Premium</div></div>
+        <div class="chip-card" onclick="selectChip('s-chips-tom',this,false)"><div class="chip-card-label">Streetwear</div></div>
+      </div>
+      <div class="modal-section-title">Personalidade</div>
+      <div class="words-row">
+        <input class="field-input" id="s-palavra1" type="text" maxlength="20" />
+        <input class="field-input" id="s-palavra2" type="text" maxlength="20" />
+        <input class="field-input" id="s-palavra3" type="text" maxlength="20" />
+      </div>
+      <button class="save-btn" onclick="saveSettings()">Salvar alteracoes</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let currentStep = 1;
+  const totalSteps = 6;
+  let apiConnected = false;
+
+  // ── INTRO ANIMATION ───────────────────────────────────────────────────────
+  function runIntro() {
+    const letters = document.querySelectorAll('.intro-letter');
+    const intro   = document.getElementById('intro');
+    const ob      = document.getElementById('onboarding');
+
+    // Anima cada letra com delay escalonado
+    letters.forEach(letter => {
+      const delay = parseInt(letter.dataset.delay) + 200;
+      setTimeout(() => letter.classList.add('animate'), delay);
+    });
+
+    // Fade out da intro e aparece o onboarding
+    setTimeout(() => {
+      intro.classList.add('fade-out');
+      ob.classList.add('visible');
+      setTimeout(() => { intro.style.display = 'none'; }, 700);
+    }, 2000);
+  }
+
+  // Roda quando as fontes carregaram
+  if (document.fonts) {
+    document.fonts.ready.then(runIntro);
+  } else {
+    setTimeout(runIntro, 300);
+  }
+
+  let brand = {
+    nome: '', cidade: '', tipo: '', servicos: [],
+    publico: [], tom: '', palavras: [], redes: []
+  };
+
+  // ── CHIPS ─────────────────────────────────────────────────────────────────
+  function selectChip(containerId, el, multi) {
+    const container = document.getElementById(containerId);
+    if (!multi) container.querySelectorAll('.chip,.chip-card').forEach(c => c.classList.remove('selected'));
+    el.classList.toggle('selected');
+  }
+
+  function getSelected(containerId) {
+    return [...document.querySelectorAll(`#${containerId} .selected`)]
+      .map(el => (el.querySelector('.chip-card-label') || el).textContent.trim());
+  }
+
+  // ── ONBOARDING ────────────────────────────────────────────────────────────
+  function updateProgress() {
+    document.getElementById('ob-progress').style.width = (currentStep / totalSteps * 100) + '%';
+    document.getElementById('step-indicator').textContent = `${currentStep} de ${totalSteps}`;
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.ob-step').forEach(s => s.classList.remove('active'));
+    document.querySelector(`.ob-step[data-step="${n}"]`).classList.add('active');
+    currentStep = n;
+    updateProgress();
+  }
+
+  function nextStep() { if (currentStep < totalSteps) showStep(currentStep + 1); }
+  function prevStep() { if (currentStep > 1) showStep(currentStep - 1); }
+
+  function finishOnboarding() {
+    brand.nome     = document.getElementById('f-nome').value || 'Minha Barbearia';
+    brand.cidade   = document.getElementById('f-cidade').value || '';
+    brand.tipo     = getSelected('chips-tipo')[0] || '';
+    brand.servicos = getSelected('chips-servicos');
+    brand.publico  = getSelected('chips-publico');
+    brand.tom      = getSelected('chips-tom')[0] || '';
+    brand.palavras = [
+      document.getElementById('f-palavra1').value,
+      document.getElementById('f-palavra2').value,
+      document.getElementById('f-palavra3').value,
+    ].filter(Boolean);
+    brand.redes = getSelected('chips-redes');
+
+    renderCofre();
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('active');
+  }
+
+  // ── TABS ──────────────────────────────────────────────────────────────────
+  function switchTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── COFRE PREVIEW ─────────────────────────────────────────────────────────
+  function renderCofre() {
+    const preview = document.getElementById('cofre-preview');
+    const rows = [
+      ['Barbearia', brand.nome],
+      ['Cidade', brand.cidade],
+      ['Operacao', brand.tipo],
+      ['Servicos', brand.servicos],
+      ['Publico', brand.publico],
+      ['Tom de voz', brand.tom, 'tone'],
+      ['Personalidade', brand.palavras],
+      ['Redes', brand.redes],
+    ];
+    preview.innerHTML = rows.map(([key, val, type]) => {
+      if (!val || (Array.isArray(val) && !val.length)) return '';
+      let html = '';
+      if (Array.isArray(val)) {
+        html = `<div class="tag-list">${val.map(v => `<span class="tag">${v}</span>`).join('')}</div>`;
+      } else if (type === 'tone') {
+        html = `<span class="tone-badge"><span class="tone-dot"></span>${val}</span>`;
+      } else {
+        html = val;
+      }
+      return `<div class="cofre-row"><span class="cofre-key">${key}</span><div class="cofre-val">${html}</div></div>`;
+    }).join('');
+  }
+
+  // ── API ───────────────────────────────────────────────────────────────────
+  function connectAPI() {
+    const key = document.getElementById('api-key').value.trim();
+    if (!key.startsWith('sk-ant-')) {
+      showToast('Chave invalida. Deve comecar com sk-ant-');
+      return;
+    }
+    apiConnected = true;
+    const btn = document.getElementById('api-connect-btn');
+    btn.textContent = 'Conectado';
+    btn.classList.add('connected');
+    document.getElementById('gen-btn').disabled = false;
+    showToast('API conectada com sucesso');
+  }
+
+  // ── GERADOR ───────────────────────────────────────────────────────────────
+  async function gerarConteudo() {
+    const key      = document.getElementById('api-key').value.trim();
+    const tipo     = document.getElementById('gen-tipo').value;
+    const objetivo = document.getElementById('gen-objetivo').value;
+    const contexto = document.getElementById('gen-contexto').value;
+
+    const tipoLabel = {
+      legenda_feed: 'legenda para feed do Instagram',
+      legenda_story: 'texto curto para story do Instagram',
+      mensagem_whatsapp: 'mensagem para WhatsApp',
+      campanha: 'ideia completa de campanha',
+      direcao_criativa: 'direcao criativa detalhada'
+    }[tipo];
+
+    const objetivoLabel = {
+      autoridade: 'construir autoridade e credibilidade',
+      promocao: 'divulgar uma promocao ou oferta',
+      antes_depois: 'mostrar resultado antes e depois',
+      depoimento: 'incentivar o cliente a deixar depoimento',
+      campanha_sazonal: 'campanha para data sazonal',
+      identidade: 'mostrar a identidade e personalidade da marca'
+    }[objetivo];
+
+    const prompt = `Voce e um estrategista de conteudo especializado em barbearias e beleza masculina.
+
+PERFIL DA MARCA:
+- Nome: ${brand.nome}
+- Cidade: ${brand.cidade}
+- Tipo de operacao: ${brand.tipo}
+- Servicos: ${brand.servicos.join(', ') || 'nao informado'}
+- Publico-alvo: ${brand.publico.join(', ') || 'nao informado'}
+- Tom de voz: ${brand.tom}
+- Personalidade da marca: ${brand.palavras.join(', ') || 'nao informado'}
+- Redes ativas: ${brand.redes.join(', ') || 'Instagram'}
+
+SOLICITACAO:
+Crie ${tipoLabel} com objetivo de ${objetivoLabel}.
+${contexto ? `\nContexto adicional: ${contexto}` : ''}
+
+INSTRUCOES:
+- Use o tom de voz definido no perfil. Nao seja generico.
+- Nao use emojis em nenhuma hipotese.
+- Se for legenda: inclua o texto principal, uma chamada para acao clara e sugestao de hashtags relevantes.
+- Se for story: texto curto e impactante, maximo 3 linhas.
+- Se for WhatsApp: tom direto e pessoal, como uma mensagem real.
+- Se for campanha: traga conceito, acoes sugeridas (fotos, reels, stories) e uma oferta.
+- Se for direcao criativa: descreva a estetica, referencias visuais, cores, mood e angulos sugeridos.
+- Escreva em portugues brasileiro.`;
+
+    const outputCard = document.getElementById('output-card');
+    const outputBody = document.getElementById('output-body');
+    const loadingBar = document.getElementById('loading-bar');
+    const genBtn     = document.getElementById('gen-btn');
+
+    outputCard.classList.add('visible');
+    loadingBar.classList.add('visible');
+    outputBody.textContent = '';
+    genBtn.disabled = true;
+    genBtn.textContent = 'Gerando...';
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.error) {
+        outputBody.textContent = 'Erro: ' + data.error.message;
+      } else {
+        outputBody.textContent = data.content[0].text;
+      }
+    } catch (err) {
+      outputBody.textContent = 'Erro ao conectar com a API. Verifique sua chave e tente novamente.';
+    }
+
+    loadingBar.classList.remove('visible');
+    genBtn.disabled = false;
+    genBtn.textContent = 'Gerar conteudo';
+  }
+
+  function copiarConteudo() {
+    const text = document.getElementById('output-body').textContent;
+    navigator.clipboard.writeText(text).then(() => showToast('Conteudo copiado'));
+  }
+
+  // ── SETTINGS ─────────────────────────────────────────────────────────────
+  function openSettings() {
+    document.getElementById('s-nome').value    = brand.nome;
+    document.getElementById('s-cidade').value  = brand.cidade;
+    document.getElementById('s-palavra1').value = brand.palavras[0] || '';
+    document.getElementById('s-palavra2').value = brand.palavras[1] || '';
+    document.getElementById('s-palavra3').value = brand.palavras[2] || '';
+    document.querySelectorAll('#s-chips-tipo .chip-card').forEach(c => {
+      c.classList.toggle('selected', c.querySelector('.chip-card-label').textContent.trim() === brand.tipo);
+    });
+    document.querySelectorAll('#s-chips-tom .chip-card').forEach(c => {
+      c.classList.toggle('selected', c.querySelector('.chip-card-label').textContent.trim() === brand.tom);
+    });
+    document.getElementById('settings-modal').classList.add('open');
+  }
+
+  function closeSettings() { document.getElementById('settings-modal').classList.remove('open'); }
+  function closeSettingsOutside(e) { if (e.target.id === 'settings-modal') closeSettings(); }
+
+  function saveSettings() {
+    brand.nome     = document.getElementById('s-nome').value || brand.nome;
+    brand.cidade   = document.getElementById('s-cidade').value || brand.cidade;
+    brand.tipo     = getSelected('s-chips-tipo')[0] || brand.tipo;
+    brand.tom      = getSelected('s-chips-tom')[0] || brand.tom;
+    brand.palavras = [
+      document.getElementById('s-palavra1').value,
+      document.getElementById('s-palavra2').value,
+      document.getElementById('s-palavra3').value,
+    ].filter(Boolean);
+    renderCofre();
+    closeSettings();
+    showToast('Cofre da Marca atualizado');
+  }
+
+  // ── TOAST ─────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<span class="t-check">+</span> ${msg}`;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+</script>
+</body>
+</html>
