@@ -1,7 +1,8 @@
 "use client"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, ArrowLeft, Scissors } from "lucide-react"
+import { ArrowRight, ArrowLeft, Scissors, Check } from "lucide-react"
+import Link from "next/link"
 import { supabaseBrowser } from "@/lib/supabase-client"
 
 const TIPOS = ["Barbearia clássica","Barbearia moderna","Espaço premium/boutique","Studio de barba"]
@@ -24,6 +25,7 @@ export default function Onboarding() {
   const [tom, setTom] = useState("")
   const [palavrasInput, setPalavrasInput] = useState("")
   const [redes, setRedes] = useState<string[]>([])
+  const [aceitouPolitica, setAceitouPolitica] = useState(false)
 
   const toggle = (arr: string[], setArr: (v: string[]) => void, item: string) =>
     setArr(arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item])
@@ -34,16 +36,20 @@ export default function Onboarding() {
     servicos.length > 0,
     publico.length > 0 && !!tom,
     redes.length > 0,
-    true,
+    aceitouPolitica,
   ]
 
   const finalizar = async () => {
-    if (!email.trim()) return
+    if (!email.trim() || !aceitouPolitica) return
     setLoading(true)
     const supabase = supabaseBrowser()
     const palavras = palavrasInput.split(",").map(p => p.trim()).filter(Boolean)
 
-    sessionStorage.setItem("fade_onboarding", JSON.stringify({ nome, cidade, tipo, servicos, publico, tom, palavras, redes }))
+    sessionStorage.setItem("fade_onboarding", JSON.stringify({
+      nome, cidade, tipo, servicos, publico, tom, palavras, redes,
+      consentimento_aceito_em: new Date().toISOString(),
+      consentimento_versao: "v1",
+    }))
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -141,7 +147,23 @@ export default function Onboarding() {
                   <div className="label" style={{marginBottom:8}}>ÚLTIMO PASSO</div>
                   <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:10}}>Qual seu e-mail?</h2>
                   <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:22}}>Enviamos um link de acesso — sem senha, sem complicação.</p>
-                  <input className="inp" type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} />
+                  <input className="inp" type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:18}} />
+
+                  <button
+                    onClick={()=>setAceitouPolitica(v=>!v)}
+                    style={{display:"flex",alignItems:"flex-start",gap:10,background:"none",border:"none",cursor:"pointer",textAlign:"left",width:"100%"}}>
+                    <div style={{
+                      width:18,height:18,flexShrink:0,marginTop:1,borderRadius:5,
+                      border:`1px solid ${aceitouPolitica?"var(--acc)":"var(--border-h)"}`,
+                      background:aceitouPolitica?"var(--acc)":"transparent",
+                      display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"
+                    }}>
+                      {aceitouPolitica && <Check size={11} style={{color:"#fff"}}/>}
+                    </div>
+                    <span style={{fontSize:".78rem",color:"var(--fg-dim)",lineHeight:1.5}}>
+                      Li e aceito a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
+                    </span>
+                  </button>
                 </>
               ) : (
                 <div style={{textAlign:"center",padding:"30px 0"}}>
