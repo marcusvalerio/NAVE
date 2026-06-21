@@ -9,6 +9,8 @@ export interface Marca {
   tom: string
   palavras: string[]
   redes: string[]
+  admin_nome: string | null
+  admin_whatsapp: string | null
   created_at: string
   updated_at: string
 }
