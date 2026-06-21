@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Scissors, Sparkles, Copy, Calendar, LayoutDashboard, LogOut, Check, Settings } from "lucide-react"
+import { Scissors, Sparkles, Copy, Calendar, LogOut, Check, Settings, Trash2 } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 
@@ -29,6 +29,8 @@ export default function Dashboard() {
   const [gerando, setGerando] = useState(false)
   const [erro, setErro] = useState("")
   const [copiadoId, setCopiadoId] = useState<string | null>(null)
+  const [apagandoId, setApagandoId] = useState<string | null>(null)
+  const [confirmandoApagar, setConfirmandoApagar] = useState<string | null>(null)
 
   useEffect(() => { init() }, [])
 
@@ -37,7 +39,6 @@ export default function Dashboard() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/onboarding"); return }
 
-    // Vincular dados do onboarding se ainda não houver marca
     const pending = sessionStorage.getItem("fade_onboarding")
     let marcaAtual: Marca | null = null
 
@@ -83,10 +84,15 @@ export default function Dashboard() {
         body: JSON.stringify({ marca_id: marca.id, tipo, rede, tema }),
       })
       const data = await res.json()
-      if (!res.ok) { setErro(data.error || "Erro ao gerar conteúdo."); return }
+      if (!res.ok) {
+        setErro(data.error || "Não conseguimos gerar agora. Tenta de novo em alguns segundos.")
+        return
+      }
       setConteudos(prev => [data.conteudo, ...prev])
       setTema("")
       if (assinatura) setAssinatura({ ...assinatura, conteudos_usados_mes: assinatura.conteudos_usados_mes + 1 })
+    } catch {
+      setErro("Sem conexão com o servidor. Verifica sua internet e tenta de novo.")
     } finally {
       setGerando(false)
     }
@@ -97,6 +103,16 @@ export default function Dashboard() {
     navigator.clipboard.writeText(texto)
     setCopiadoId(c.id)
     setTimeout(() => setCopiadoId(null), 1800)
+  }
+
+  const apagar = async (id: string) => {
+    setApagandoId(id)
+    const res = await fetch(`/api/conteudo/${id}`, { method: "DELETE" })
+    if (res.ok) {
+      setConteudos(prev => prev.filter(c => c.id !== id))
+    }
+    setApagandoId(null)
+    setConfirmandoApagar(null)
   }
 
   const sair = async () => {
@@ -184,10 +200,19 @@ export default function Dashboard() {
           <div className="label" style={{marginBottom:8}}>TEMA (OPCIONAL)</div>
           <input className="inp" placeholder="ex: promoção de terça, novo serviço, dica de cuidado" value={tema} onChange={e=>setTema(e.target.value)} style={{marginBottom:16}}/>
 
-          {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginBottom:14}}>{erro}</div>}
+          {erro && (
+            <div style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:".8rem",color:"#ef4444",marginBottom:14,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"10px 12px"}}>
+              {erro}
+            </div>
+          )}
 
           <button onClick={gerar} disabled={gerando || usados >= limite} className="btn-primary" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-            {gerando ? "Gerando..." : usados >= limite ? "Limite do plano atingido" : <>Gerar conteúdo <Sparkles size={14}/></>}
+            {gerando ? (
+              <>
+                <motion.div animate={{rotate:360}} transition={{duration:0.8,repeat:Infinity,ease:"linear"}} style={{width:13,height:13,border:"2px solid rgba(255,255,255,0.3)",borderTopColor:"#fff",borderRadius:"50%"}}/>
+                Gerando, pode levar alguns segundos...
+              </>
+            ) : usados >= limite ? "Limite do plano atingido" : <>Gerar conteúdo <Sparkles size={14}/></>}
           </button>
         </div>
 
@@ -196,7 +221,7 @@ export default function Dashboard() {
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <AnimatePresence>
             {conteudos.map(c=>(
-              <motion.div key={c.id} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0}} className="card card-hover" style={{padding:"16px 18px"}}>
+              <motion.div key={c.id} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,height:0}} className="card card-hover" style={{padding:"16px 18px",overflow:"hidden"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                   <div>
                     <div style={{fontWeight:600,fontSize:".88rem",marginBottom:3}}>{c.titulo}</div>
@@ -206,9 +231,20 @@ export default function Dashboard() {
                       <span className="label" style={{fontSize:".62rem",textTransform:"capitalize"}}>{c.rede}</span>
                     </div>
                   </div>
-                  <button onClick={()=>copiar(c)} className="btn-ghost" style={{padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
-                    {copiadoId===c.id ? <><Check size={12}/> Copiado</> : <><Copy size={12}/> Copiar</>}
-                  </button>
+                  <div style={{display:"flex",gap:6,flexShrink:0}}>
+                    <button onClick={()=>copiar(c)} className="btn-ghost" style={{padding:"6px 10px",display:"flex",alignItems:"center",gap:5}}>
+                      {copiadoId===c.id ? <><Check size={12}/> Copiado</> : <><Copy size={12}/> Copiar</>}
+                    </button>
+                    {confirmandoApagar === c.id ? (
+                      <button onClick={()=>apagar(c.id)} disabled={apagandoId===c.id} className="btn-ghost" style={{padding:"6px 10px",borderColor:"rgba(239,68,68,0.4)",color:"#ef4444"}}>
+                        {apagandoId===c.id ? "..." : "Confirmar"}
+                      </button>
+                    ) : (
+                      <button onClick={()=>setConfirmandoApagar(c.id)} className="btn-ghost" style={{padding:"6px 8px"}}>
+                        <Trash2 size={12}/>
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p style={{fontSize:".84rem",color:"var(--fg-dim)",lineHeight:1.55,whiteSpace:"pre-wrap"}}>{c.conteudo}</p>
                 {c.hashtags?.length > 0 && (
@@ -217,8 +253,15 @@ export default function Dashboard() {
               </motion.div>
             ))}
           </AnimatePresence>
+
           {conteudos.length===0 && (
-            <div style={{textAlign:"center",padding:"40px 0",color:"var(--fg-faint)",fontSize:".85rem"}}>Nenhum conteúdo gerado ainda. Comece acima.</div>
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} className="card" style={{textAlign:"center",padding:"36px 24px"}}>
+              <Sparkles size={22} style={{color:"var(--acc)",marginBottom:12}}/>
+              <div style={{fontWeight:600,fontSize:".9rem",marginBottom:6}}>Sua primeira publicação está a um clique</div>
+              <p style={{fontSize:".8rem",color:"var(--fg-faint)",lineHeight:1.5,maxWidth:280,margin:"0 auto"}}>
+                Escolhe um tipo de conteúdo acima e toca em &quot;Gerar conteúdo&quot; — em segundos você tem um post pronto, no tom da sua marca.
+              </p>
+            </motion.div>
           )}
         </div>
       </main>
