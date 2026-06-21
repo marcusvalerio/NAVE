@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const body = await request.json()
-  const { nome, cidade, tipo, servicos, publico, tom, palavras, redes, consentimento_aceito_em, consentimento_versao } = body
+  const { nome, cidade, tipo, servicos, publico, tom, palavras, redes, consentimento_aceito_em, consentimento_versao, admin_nome, admin_whatsapp } = body
 
   const { data: existing } = await supabase
     .from("marcas")
@@ -17,9 +17,13 @@ export async function POST(request: NextRequest) {
     .maybeSingle()
 
   if (existing) {
+    const updatePayload: Record<string, unknown> = { nome, cidade, tipo, servicos, publico, tom, palavras, redes }
+    if (admin_nome !== undefined) updatePayload.admin_nome = admin_nome
+    if (admin_whatsapp !== undefined) updatePayload.admin_whatsapp = admin_whatsapp
+
     const { error } = await supabase
       .from("marcas")
-      .update({ nome, cidade, tipo, servicos, publico, tom, palavras, redes })
+      .update(updatePayload)
       .eq("id", existing.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ id: existing.id })
@@ -29,6 +33,8 @@ export async function POST(request: NextRequest) {
     .from("marcas")
     .insert({
       user_id: user.id, nome, cidade, tipo, servicos, publico, tom, palavras, redes,
+      admin_nome: admin_nome || null,
+      admin_whatsapp: admin_whatsapp || null,
       consentimento_aceito_em: consentimento_aceito_em || new Date().toISOString(),
       consentimento_versao: consentimento_versao || "v1",
     })
