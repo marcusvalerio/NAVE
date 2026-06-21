@@ -161,7 +161,7 @@ export default function Onboarding() {
                       {aceitouPolitica && <Check size={11} style={{color:"#fff"}}/>}
                     </div>
                     <span style={{fontSize:".78rem",color:"var(--fg-dim)",lineHeight:1.5}}>
-                      Li e aceito a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
+                      Li e aceito os <Link href="/termos" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
                     </span>
                   </button>
                 </>
