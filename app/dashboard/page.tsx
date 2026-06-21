@@ -115,6 +115,10 @@ export default function Dashboard() {
   const limite = plano?.limite_conteudos_mes || 5
   const pct = Math.min(100, Math.round((usados / limite) * 100))
 
+  const h = new Date().getHours()
+  const periodo = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"
+  const primeiroNome = marca?.admin_nome?.trim().split(" ")[0]
+
   return (
     <div style={{minHeight:"100vh"}}>
       <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid var(--border)",position:"sticky",top:0,background:"rgba(10,10,10,0.92)",backdropFilter:"blur(12px)",zIndex:10}}>
@@ -132,6 +136,13 @@ export default function Dashboard() {
       </header>
 
       <main style={{maxWidth:680,margin:"0 auto",padding:"28px 20px 80px"}}>
+
+        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.35}} style={{marginBottom:22}}>
+          <h1 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,letterSpacing:"-.01em"}}>
+            {periodo}{primeiroNome ? `, ${primeiroNome}` : ""}!
+          </h1>
+          <p style={{fontSize:".84rem",color:"var(--fg-dim)",marginTop:4}}>Aqui está toda a evolução da {marca?.nome || "sua marca"}.</p>
+        </motion.div>
 
         {/* Status do plano */}
         <div className="card" style={{padding:"16px 18px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
