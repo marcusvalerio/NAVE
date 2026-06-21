@@ -20,7 +20,8 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--bg); color: var(--fg); font-family: var(--f-body); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+html { -webkit-text-size-adjust: 100%; }
+html, body { background: var(--bg); color: var(--fg); font-family: var(--f-body); min-height: 100vh; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 input, textarea, select, button { font-family: var(--f-body); -webkit-appearance: none; }
 a { color: inherit; text-decoration: none; }
 
@@ -63,12 +64,13 @@ a { color: inherit; text-decoration: none; }
 }
 .btn-ghost:hover { border-color: var(--border-h); color: var(--fg); }
 
+/* CRÍTICO: font-size mínimo 16px no input — Safari iOS dá zoom automático em inputs abaixo disso */
 .inp {
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border);
   border-radius: 10px;
   color: var(--fg);
-  font-size: .9rem;
+  font-size: 16px;
   padding: 12px 14px;
   width: 100%;
   transition: border-color .15s;
@@ -107,3 +109,21 @@ a { color: inherit; text-decoration: none; }
 
 @keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform:none; } }
 .fade-up { animation: fadeUp .35s ease forwards; }
+
+/* Ambient glow no fundo do hero */
+@keyframes drift {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  50% { transform: translate(3%,-4%) scale(1.08); }
+}
+.ambient-glow {
+  position: absolute;
+  width: 560px; height: 560px;
+  background: radial-gradient(circle, rgba(59,130,246,0.16), transparent 70%);
+  filter: blur(40px);
+  animation: drift 14s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Cursor de "digitando" para o mockup do produto */
+@keyframes blink-caret { 50% { opacity: 0; } }
+.caret { animation: blink-caret 1s step-end infinite; }
