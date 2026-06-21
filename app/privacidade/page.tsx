@@ -16,7 +16,7 @@ export default function Privacidade() {
 
       <main style={{maxWidth:680,margin:"0 auto",padding:"40px 24px 80px",lineHeight:1.7,fontSize:".92rem",color:"var(--fg-dim)"}}>
         <h1 className="font-display" style={{fontSize:"1.8rem",fontWeight:700,color:"var(--fg)",marginBottom:8}}>Política de Privacidade</h1>
-        <p className="label" style={{marginBottom:32}}>ÚLTIMA ATUALIZAÇÃO: 20 DE JUNHO DE 2026 · VERSÃO 1</p>
+        <p className="label" style={{marginBottom:32}}>ÚLTIMA ATUALIZAÇÃO: 21 DE JUNHO DE 2026 · VERSÃO 2</p>
 
         <Secao titulo="1. Quem somos">
           O FADE é um serviço de geração de conteúdo para redes sociais voltado a barbearias. Esta política explica como tratamos os dados pessoais de quem usa o serviço, em conformidade com a Lei Geral de Proteção de Dados (Lei 13.709/2018).
@@ -27,13 +27,14 @@ export default function Privacidade() {
           <ul style={{marginTop:10,paddingLeft:20}}>
             <li>E-mail, usado para login e comunicação sobre a conta.</li>
             <li>Nome da marca, cidade, tipo de negócio, serviços oferecidos, público-alvo e tom de voz, usados para personalizar o conteúdo gerado.</li>
+            <li>Seu nome e, opcionalmente, seu WhatsApp, usados para personalizar sua experiência e para contato sobre sua conta.</li>
             <li>Os conteúdos gerados e seu histórico de uso, para que você possa consultá-los depois.</li>
           </ul>
           Não coletamos dados de clientes finais da sua barbearia (ex: agendamentos, telefones de clientes).
         </Secao>
 
         <Secao titulo="3. Por que tratamos esses dados">
-          Tratamos seus dados com base na execução do contrato de prestação de serviço (Art. 7º, V, LGPD): sem eles, não é possível gerar conteúdo personalizado nem manter sua conta funcionando. Quando aplicável, também com base no seu consentimento, registrado no momento do cadastro.
+          Tratamos seus dados com base na execução do contrato de prestação de serviço (Art. 7º, V, LGPD): sem eles, não é possível gerar conteúdo personalizado nem manter sua conta funcionando. O WhatsApp é coletado apenas com seu consentimento explícito e opcional (Art. 7º, I), podendo ser informado ou removido a qualquer momento em Configurações.
         </Secao>
 
         <Secao titulo="4. Com quem compartilhamos">
@@ -42,7 +43,7 @@ export default function Privacidade() {
             <li><strong style={{color:"var(--fg)"}}>Anthropic (Claude)</strong> — processa o perfil da sua marca para gerar o texto do conteúdo, sem reter os dados após a geração.</li>
             <li><strong style={{color:"var(--fg)"}}>Vercel</strong> — hospeda a aplicação.</li>
           </ul>
-          Não vendemos nem compartilhamos seus dados com terceiros para fins de publicidade.
+          Seu WhatsApp nunca é compartilhado com esses ou outros provedores além do estritamente necessário para autenticação e hospedagem da conta. Não vendemos nem compartilhamos seus dados com terceiros para fins de publicidade.
         </Secao>
 
         <Secao titulo="5. Por quanto tempo guardamos seus dados">
@@ -54,7 +55,8 @@ export default function Privacidade() {
           <ul style={{marginTop:10,paddingLeft:20}}>
             <li>Confirmar e acessar os dados que temos sobre você.</li>
             <li>Exportar uma cópia completa dos seus dados (disponível no painel, em Configurações).</li>
-            <li>Corrigir dados incompletos ou desatualizados (editando seu perfil de marca).</li>
+            <li>Corrigir dados incompletos ou desatualizados, incluindo nome e WhatsApp (disponível no painel, em Configurações).</li>
+            <li>Remover seu WhatsApp sem precisar excluir a conta inteira.</li>
             <li>Solicitar a exclusão da sua conta e dos seus dados (disponível no painel, em Configurações).</li>
             <li>Revogar o consentimento dado no cadastro.</li>
           </ul>
