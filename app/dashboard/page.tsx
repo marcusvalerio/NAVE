@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Scissors, Sparkles, Copy, Calendar, LayoutDashboard, LogOut, Check } from "lucide-react"
+import { Scissors, Sparkles, Copy, Calendar, LayoutDashboard, LogOut, Check, Settings } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 
@@ -126,6 +126,7 @@ export default function Dashboard() {
           <button onClick={()=>router.push("/calendario")} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px"}}>
             <Calendar size={14}/> Calendário
           </button>
+          <button onClick={()=>router.push("/configuracoes")} style={{background:"none",border:"none",color:"var(--fg-faint)",cursor:"pointer"}}><Settings size={16}/></button>
           <button onClick={sair} style={{background:"none",border:"none",color:"var(--fg-faint)",cursor:"pointer"}}><LogOut size={16}/></button>
         </div>
       </header>
