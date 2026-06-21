@@ -17,6 +17,8 @@ export default function Onboarding() {
   const [email, setEmail] = useState("")
   const [emailSent, setEmailSent] = useState(false)
 
+  const [adminNome, setAdminNome] = useState("")
+  const [adminWhatsapp, setAdminWhatsapp] = useState("")
   const [nome, setNome] = useState("")
   const [cidade, setCidade] = useState("")
   const [tipo, setTipo] = useState("")
@@ -30,14 +32,16 @@ export default function Onboarding() {
   const toggle = (arr: string[], setArr: (v: string[]) => void, item: string) =>
     setArr(arr.includes(item) ? arr.filter(i => i !== item) : [...arr, item])
 
-  const steps = ["Marca", "Serviços", "Público & tom", "Redes", "Acesso"]
+  const steps = ["Você", "Marca", "Serviços", "Público & tom", "Redes", "Acesso"]
   const canNext = [
+    !!adminNome.trim(),
     !!(nome.trim() && cidade.trim() && tipo),
     servicos.length > 0,
     publico.length > 0 && !!tom,
     redes.length > 0,
     aceitouPolitica,
   ]
+  const lastStep = steps.length - 1
 
   const finalizar = async () => {
     if (!email.trim() || !aceitouPolitica) return
@@ -47,8 +51,9 @@ export default function Onboarding() {
 
     sessionStorage.setItem("fade_onboarding", JSON.stringify({
       nome, cidade, tipo, servicos, publico, tom, palavras, redes,
+      admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
       consentimento_aceito_em: new Date().toISOString(),
-      consentimento_versao: "v1",
+      consentimento_versao: "v2",
     }))
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -78,6 +83,22 @@ export default function Onboarding() {
 
           {step===0 && (
             <motion.div key="0" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
+              <div className="label" style={{marginBottom:8}}>ANTES DE TUDO</div>
+              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Como você se chama?</h2>
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                <input className="inp" placeholder="Seu nome" value={adminNome} onChange={e=>setAdminNome(e.target.value)} />
+                <div>
+                  <input className="inp" placeholder="WhatsApp (opcional)" value={adminWhatsapp} onChange={e=>setAdminWhatsapp(e.target.value)} />
+                  <p style={{fontSize:".72rem",color:"var(--fg-faint)",marginTop:8,lineHeight:1.5}}>
+                    Só usamos pra falar com você sobre sua conta — nunca pra divulgação.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {step===1 && (
+            <motion.div key="1" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
               <div className="label" style={{marginBottom:8}}>SOBRE A MARCA</div>
               <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Como sua barbearia se chama?</h2>
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -95,8 +116,8 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {step===1 && (
-            <motion.div key="1" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
+          {step===2 && (
+            <motion.div key="2" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
               <div className="label" style={{marginBottom:8}}>SERVIÇOS</div>
               <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>O que vocês oferecem?</h2>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
@@ -107,8 +128,8 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {step===2 && (
-            <motion.div key="2" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
+          {step===3 && (
+            <motion.div key="3" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
               <div className="label" style={{marginBottom:8}}>PÚBLICO E VOZ</div>
               <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Quem é seu cliente e como você fala com ele?</h2>
               <div className="label" style={{marginBottom:10}}>PÚBLICO PRINCIPAL</div>
@@ -128,8 +149,8 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {step===3 && (
-            <motion.div key="3" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
+          {step===4 && (
+            <motion.div key="4" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
               <div className="label" style={{marginBottom:8}}>CANAIS</div>
               <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Onde você posta?</h2>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
@@ -140,8 +161,8 @@ export default function Onboarding() {
             </motion.div>
           )}
 
-          {step===4 && (
-            <motion.div key="4" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
+          {step===lastStep && (
+            <motion.div key="5" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
               {!emailSent ? (
                 <>
                   <div className="label" style={{marginBottom:8}}>ÚLTIMO PASSO</div>
@@ -185,11 +206,11 @@ export default function Onboarding() {
             </button>
           )}
           <button
-            onClick={()=> step<4 ? setStep(s=>s+1) : finalizar()}
+            onClick={()=> step<lastStep ? setStep(s=>s+1) : finalizar()}
             disabled={!canNext[step] || loading}
             className="btn-primary"
             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            {loading ? "Enviando..." : step<4 ? <>Continuar <ArrowRight size={14}/></> : "Enviar link de acesso"}
+            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar link de acesso"}
           </button>
         </footer>
       )}
