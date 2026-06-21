@@ -26,7 +26,7 @@ export default function Home() {
           <Scissors size={18} style={{color:"var(--acc)"}} />
           <span className="font-display" style={{fontSize:"1.1rem",fontWeight:700,letterSpacing:"-.02em"}}>FADE</span>
         </div>
-        <Link href="/onboarding" className="btn-ghost">Entrar</Link>
+        <Link href="/login" className="btn-ghost">Entrar</Link>
       </motion.nav>
 
       {/* HERO */}
