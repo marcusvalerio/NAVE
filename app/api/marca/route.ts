@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const body = await request.json()
-  const { nome, cidade, tipo, servicos, publico, tom, palavras, redes } = body
+  const { nome, cidade, tipo, servicos, publico, tom, palavras, redes, consentimento_aceito_em, consentimento_versao } = body
 
   const { data: existing } = await supabase
     .from("marcas")
@@ -27,7 +27,11 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("marcas")
-    .insert({ user_id: user.id, nome, cidade, tipo, servicos, publico, tom, palavras, redes })
+    .insert({
+      user_id: user.id, nome, cidade, tipo, servicos, publico, tom, palavras, redes,
+      consentimento_aceito_em: consentimento_aceito_em || new Date().toISOString(),
+      consentimento_versao: consentimento_versao || "v1",
+    })
     .select("id")
     .single()
 
