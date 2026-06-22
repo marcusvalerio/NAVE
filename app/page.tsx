@@ -1,6 +1,7 @@
 "use client"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Scissors, ArrowRight, Check, Sparkles, Calendar, Copy } from "lucide-react"
 
 const PLANOS = [
@@ -16,8 +17,50 @@ const fadeUp = (delay = 0) => ({
   transition: { duration: 0.55, delay, ease: [0.22, 1, 0.36, 1] },
 })
 
-export default function Home() {
+function SplashScreen({ onDone }: { onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 1100)
+    return () => clearTimeout(t)
+  }, [onDone])
+
   return (
+    <motion.div
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4 }}
+      style={{ position: "fixed", inset: 0, zIndex: 100, background: "#0a0a0a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 14, filter: "blur(8px)" }}
+        animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        exit={{ y: -40, opacity: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="font-display"
+        style={{ fontSize: "2rem", fontWeight: 700, letterSpacing: "-.02em", color: "#f0f0f0" }}>
+        FADE
+      </motion.div>
+    </motion.div>
+  )
+}
+
+export default function Home() {
+  const [showSplash, setShowSplash] = useState(false)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    const already = sessionStorage.getItem("fade_splash_shown")
+    if (!already) {
+      setShowSplash(true)
+      sessionStorage.setItem("fade_splash_shown", "1")
+    }
+    setChecked(true)
+  }, [])
+
+  if (!checked) return null
+
+  return (
+    <>
+      <AnimatePresence>
+        {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      </AnimatePresence>
     <div style={{minHeight:"100vh",position:"relative"}}>
 
       {/* NAV */}
@@ -161,5 +204,6 @@ export default function Home() {
         FADE — feito para barbearias que não têm tempo a perder.
       </footer>
     </div>
+    </>
   )
 }
