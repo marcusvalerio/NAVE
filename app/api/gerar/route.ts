@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import Anthropic from "@anthropic-ai/sdk"
+import Groq from "groq-sdk"
 import { supabaseServer } from "@/lib/supabase-server"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 const TIPO_LABEL: Record<string, string> = {
   post: "post de feed",
@@ -12,14 +14,61 @@ const TIPO_LABEL: Record<string, string> = {
   promocao: "post promocional",
 }
 
+function montarPrompt(marca: {
+  nome: string; cidade: string; tipo: string; servicos: string[]
+  publico: string[]; tom: string; palavras?: string[]
+}, tipo: string, rede: string, tema?: string) {
+  return `Você é um copywriter especialista em redes sociais para barbearias brasileiras.
+
+PERFIL DA MARCA:
+- Nome: ${marca.nome}
+- Cidade: ${marca.cidade}
+- Tipo: ${marca.tipo}
+- Serviços: ${marca.servicos.join(", ")}
+- Público: ${marca.publico.join(", ")}
+- Tom de voz: ${marca.tom}
+${marca.palavras?.length ? `- Palavras/expressões típicas do público: ${marca.palavras.join(", ")}` : ""}
+
+TAREFA:
+Crie um ${TIPO_LABEL[tipo] || "post"} para ${rede}${tema ? ` sobre: ${tema}` : ""}.
+
+Responda em JSON puro, sem markdown, sem crases, no formato exato:
+{"titulo": "título curto interno para identificar o conteúdo", "conteudo": "o texto do post/legenda/roteiro completo", "hashtags": ["tag1", "tag2", "tag3", "tag4", "tag5"]}
+
+Regras:
+- Tom de voz: ${marca.tom}.
+- Nunca use emoji em excesso (no máximo 2-3 no texto todo).
+- Hashtags em português, relevantes para barbearia e cidade (${marca.cidade}).
+- Se for roteiro de Reels, estruture em cenas curtas (Cena 1, Cena 2...) com indicação visual.
+- Nunca invente promoções, preços ou disponibilidade que não foram informados.`
+}
+
+async function gerarComClaude(prompt: string) {
+  const msg = await anthropic.messages.create({
+    model: "claude-sonnet-4-5",
+    max_tokens: 1024,
+    messages: [{ role: "user", content: prompt }],
+  })
+  return msg.content.find(b => b.type === "text")?.text || "{}"
+}
+
+async function gerarComGroq(prompt: string) {
+  const completion = await groq.chat.completions.create({
+    model: "llama-3.3-70b-versatile",
+    messages: [{ role: "user", content: prompt }],
+    max_tokens: 1024,
+  })
+  return completion.choices[0]?.message?.content || "{}"
+}
+
 export async function POST(request: NextRequest) {
   const supabase = await supabaseServer()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const { marca_id, tipo, rede, tema } = await request.json()
+  const { marca_id, tipo, rede, tema, motor } = await request.json()
+  const motorEscolhido: "claude" | "groq" = motor === "groq" ? "groq" : "claude"
 
-  // Verificar limite do plano
   const { data: assinatura } = await supabase
     .from("assinaturas")
     .select("plano_id, conteudos_usados_mes")
@@ -45,40 +94,18 @@ export async function POST(request: NextRequest) {
 
   if (!marca) return NextResponse.json({ error: "Marca não encontrada" }, { status: 404 })
 
-  const prompt = `Você é um copywriter especialista em redes sociais para barbearias brasileiras.
-
-PERFIL DA MARCA:
-- Nome: ${marca.nome}
-- Cidade: ${marca.cidade}
-- Tipo: ${marca.tipo}
-- Serviços: ${marca.servicos.join(", ")}
-- Público: ${marca.publico.join(", ")}
-- Tom de voz: ${marca.tom}
-${marca.palavras?.length ? `- Palavras/expressões típicas do público: ${marca.palavras.join(", ")}` : ""}
-
-TAREFA:
-Crie um ${TIPO_LABEL[tipo] || "post"} para ${rede}${tema ? ` sobre: ${tema}` : ""}.
-
-Responda em JSON puro, sem markdown, sem crases, no formato exato:
-{"titulo": "título curto interno para identificar o conteúdo", "conteudo": "o texto do post/legenda/roteiro completo", "hashtags": ["tag1", "tag2", "tag3", "tag4", "tag5"]}
-
-Regras:
-- Tom de voz: ${marca.tom}.
-- Nunca use emoji em excesso (no máximo 2-3 no texto todo).
-- Hashtags em português, relevantes para barbearia e cidade (${marca.cidade}).
-- Se for roteiro de Reels, estruture em cenas curtas (Cena 1, Cena 2...) com indicação visual.
-- Nunca invente promoções, preços ou disponibilidade que não foram informados.`
+  const prompt = montarPrompt(marca, tipo, rede, tema)
 
   let raw = ""
   try {
-    const msg = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
-    })
-    raw = msg.content.find(b => b.type === "text")?.text || "{}"
-  } catch (e) {
-    return NextResponse.json({ error: "Erro ao gerar conteúdo. Tente novamente." }, { status: 500 })
+    raw = motorEscolhido === "groq" ? await gerarComGroq(prompt) : await gerarComClaude(prompt)
+  } catch {
+    // Fallback automático: se um motor falhar, tenta o outro antes de desistir
+    try {
+      raw = motorEscolhido === "groq" ? await gerarComClaude(prompt) : await gerarComGroq(prompt)
+    } catch {
+      return NextResponse.json({ error: "Erro ao gerar conteúdo. Tente novamente." }, { status: 500 })
+    }
   }
 
   let parsed: { titulo: string; conteudo: string; hashtags: string[] }
@@ -106,10 +133,18 @@ Regras:
 
   if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 })
 
+  const novoUso = (assinatura?.conteudos_usados_mes || 0) + 1
   await supabase
     .from("assinaturas")
-    .update({ conteudos_usados_mes: (assinatura?.conteudos_usados_mes || 0) + 1 })
+    .update({ conteudos_usados_mes: novoUso })
     .eq("user_id", user.id)
 
-  return NextResponse.json({ conteudo: novoConteudo })
+  // ── AUTOMAÇÃO (substitui fluxo n8n) ──
+  // Regra: ao se aproximar do limite do plano, sinaliza para o front sugerir upgrade.
+  let aviso: string | null = null
+  if (plano && novoUso === Math.ceil(plano.limite_conteudos_mes * 0.8)) {
+    aviso = "Você já usou 80% dos conteúdos deste mês. Considere um upgrade para não ficar sem."
+  }
+
+  return NextResponse.json({ conteudo: novoConteudo, motor: motorEscolhido, aviso })
 }
