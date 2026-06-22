@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { Scissors, Sparkles, Copy, Calendar, LogOut, Check, Settings, Trash2 } from "lucide-react"
+import { Scissors, Sparkles, Copy, Calendar, LogOut, Check, Settings, Trash2, Zap } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 
@@ -26,8 +26,10 @@ export default function Dashboard() {
   const [tipo, setTipo] = useState("post")
   const [rede, setRede] = useState("instagram")
   const [tema, setTema] = useState("")
+  const [motor, setMotor] = useState<"claude" | "groq">("claude")
   const [gerando, setGerando] = useState(false)
   const [erro, setErro] = useState("")
+  const [aviso, setAviso] = useState("")
   const [copiadoId, setCopiadoId] = useState<string | null>(null)
   const [apagandoId, setApagandoId] = useState<string | null>(null)
   const [confirmandoApagar, setConfirmandoApagar] = useState<string | null>(null)
@@ -78,10 +80,11 @@ export default function Dashboard() {
     if (!marca) return
     setGerando(true)
     setErro("")
+    setAviso("")
     try {
       const res = await fetch("/api/gerar", {
         method: "POST",
-        body: JSON.stringify({ marca_id: marca.id, tipo, rede, tema }),
+        body: JSON.stringify({ marca_id: marca.id, tipo, rede, tema, motor }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -90,6 +93,7 @@ export default function Dashboard() {
       }
       setConteudos(prev => [data.conteudo, ...prev])
       setTema("")
+      if (data.aviso) setAviso(data.aviso)
       if (assinatura) setAssinatura({ ...assinatura, conteudos_usados_mes: assinatura.conteudos_usados_mes + 1 })
     } catch {
       setErro("Sem conexão com o servidor. Verifica sua internet e tenta de novo.")
@@ -137,10 +141,10 @@ export default function Dashboard() {
 
   return (
     <div style={{minHeight:"100vh"}}>
-      <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid var(--border)",position:"sticky",top:0,background:"rgba(10,10,10,0.92)",backdropFilter:"blur(12px)",zIndex:10}}>
+      <header className="glass-nav" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",position:"sticky",top:0,zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Scissors size={16} style={{color:"var(--acc)"}} />
-          <span className="font-display" style={{fontSize:"1rem",fontWeight:700}}>FADE</span>
+          <span className="font-brand" style={{fontSize:"1rem"}}>FADE Conteúdo</span>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:14}}>
           <button onClick={()=>router.push("/calendario")} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px"}}>
@@ -161,7 +165,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Status do plano */}
-        <div className="card" style={{padding:"16px 18px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div className="glass" style={{padding:"16px 18px",marginBottom:24,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
             <div className="label" style={{marginBottom:5}}>PLANO {plano?.nome?.toUpperCase() || "FREE"}</div>
             <div style={{fontSize:".82rem",color:"var(--fg-dim)"}}>{usados} de {limite} conteúdos usados este mês</div>
@@ -197,12 +201,27 @@ export default function Dashboard() {
             ))}
           </div>
 
+          <div className="label" style={{marginBottom:8}}>MOTOR DE IA</div>
+          <div style={{display:"flex",gap:7,marginBottom:16}}>
+            <button onClick={()=>setMotor("claude")} className={`chip ${motor==="claude"?"chip-on":""}`} style={{display:"flex",alignItems:"center",gap:5}}>
+              <Sparkles size={11}/> Claude
+            </button>
+            <button onClick={()=>setMotor("groq")} className={`chip ${motor==="groq"?"chip-on":""}`} style={{display:"flex",alignItems:"center",gap:5}}>
+              <Zap size={11}/> Groq (rápido)
+            </button>
+          </div>
+
           <div className="label" style={{marginBottom:8}}>TEMA (OPCIONAL)</div>
           <input className="inp" placeholder="ex: promoção de terça, novo serviço, dica de cuidado" value={tema} onChange={e=>setTema(e.target.value)} style={{marginBottom:16}}/>
 
           {erro && (
             <div style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:".8rem",color:"#ef4444",marginBottom:14,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"10px 12px"}}>
               {erro}
+            </div>
+          )}
+          {aviso && (
+            <div style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:".8rem",color:"#f59e0b",marginBottom:14,background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.2)",borderRadius:8,padding:"10px 12px"}}>
+              {aviso}
             </div>
           )}
 
@@ -221,7 +240,7 @@ export default function Dashboard() {
         <div style={{display:"flex",flexDirection:"column",gap:12}}>
           <AnimatePresence>
             {conteudos.map(c=>(
-              <motion.div key={c.id} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,height:0}} className="card card-hover" style={{padding:"16px 18px",overflow:"hidden"}}>
+              <motion.div key={c.id} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} exit={{opacity:0,height:0}} className="glass glass-hover" style={{padding:"16px 18px",overflow:"hidden"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
                   <div>
                     <div style={{fontWeight:600,fontSize:".88rem",marginBottom:3}}>{c.titulo}</div>
