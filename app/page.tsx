@@ -8,7 +8,7 @@ const PLANOS = [
   { id: "free", nome: "Free", preco: 0, destaque: false, recursos: ["5 conteúdos/mês", "1 marca", "Templates básicos"] },
   { id: "starter", nome: "Starter", preco: 49, destaque: false, recursos: ["30 conteúdos/mês", "1 marca", "Calendário de conteúdo", "Templates premium"] },
   { id: "pro", nome: "Pro", preco: 97, destaque: true, recursos: ["100 conteúdos/mês", "3 marcas", "Calendário + agendamento", "Dashboard de métricas"] },
-  { id: "agencia", nome: "Agência", preco: 197, destaque: false, recursos: ["Conteúdo ilimitado", "Marcas ilimitadas", "Multi-cliente", "Suporte prioritário"] },
+  { id: "estrategia", nome: "FADE Estratégia", preco: 297, destaque: false, recursos: ["Tudo do plano Pro", "Consultoria mensal com Marcus", "Plano de conteúdo personalizado", "Acompanhamento de resultados"] },
 ]
 
 const fadeUp = (delay = 0) => ({
@@ -67,7 +67,7 @@ export default function Home() {
       <motion.nav {...fadeUp(0)} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",maxWidth:1100,margin:"0 auto",position:"relative",zIndex:2}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <Scissors size={18} style={{color:"var(--acc)"}} />
-          <span className="font-display" style={{fontSize:"1.1rem",fontWeight:700,letterSpacing:"-.02em"}}>FADE</span>
+          <span className="font-brand" style={{fontSize:"1.1rem"}}>FADE Conteúdo</span>
         </div>
         <Link href="/login" className="btn-ghost">Entrar</Link>
       </motion.nav>
