@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, ArrowLeft, Scissors, Check } from "lucide-react"
 import Link from "next/link"
@@ -12,10 +13,14 @@ const TONS = ["Direto e confiante","Descontraído e brincalhão","Sofisticado e 
 const REDES_OPCOES = ["Instagram","TikTok","Facebook","WhatsApp"]
 
 export default function Onboarding() {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
-  const [emailSent, setEmailSent] = useState(false)
+  const [codigoEnviado, setCodigoEnviado] = useState(false)
+  const [codigo, setCodigo] = useState(["", "", "", "", "", ""])
+  const [erro, setErro] = useState("")
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
   const [adminNome, setAdminNome] = useState("")
   const [adminWhatsapp, setAdminWhatsapp] = useState("")
@@ -43,26 +48,63 @@ export default function Onboarding() {
   ]
   const lastStep = steps.length - 1
 
-  const finalizar = async () => {
+  const enviarCodigo = async () => {
     if (!email.trim() || !aceitouPolitica) return
     setLoading(true)
+    setErro("")
     const supabase = supabaseBrowser()
-    const palavras = palavrasInput.split(",").map(p => p.trim()).filter(Boolean)
 
     sessionStorage.setItem("fade_onboarding", JSON.stringify({
-      nome, cidade, tipo, servicos, publico, tom, palavras, redes,
-      admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
+      nome, cidade, tipo, servicos, publico, tom,
+      palavras: palavrasInput.split(",").map(p => p.trim()).filter(Boolean),
+      redes, admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
       consentimento_aceito_em: new Date().toISOString(),
       consentimento_versao: "v2",
     }))
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-    })
-
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setLoading(false)
-    if (!error) setEmailSent(true)
+    if (error) {
+      setErro("Não conseguimos enviar o código agora. Tenta de novo em alguns segundos.")
+    } else {
+      setCodigoEnviado(true)
+      setTimeout(() => inputsRef.current[0]?.focus(), 100)
+    }
+  }
+
+  const handleDigit = (idx: number, val: string) => {
+    if (!/^\d?$/.test(val)) return
+    const novo = [...codigo]
+    novo[idx] = val
+    setCodigo(novo)
+    if (val && idx < 5) inputsRef.current[idx + 1]?.focus()
+    if (novo.every(d => d !== "")) confirmarCodigo(novo.join(""))
+  }
+
+  const handleKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !codigo[idx] && idx > 0) inputsRef.current[idx - 1]?.focus()
+  }
+
+  const confirmarCodigo = async (token: string) => {
+    setLoading(true)
+    setErro("")
+    const supabase = supabaseBrowser()
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" })
+    if (error) {
+      setLoading(false)
+      setErro("Código inválido ou expirado. Confere os números ou peça um novo código.")
+      setCodigo(["", "", "", "", "", ""])
+      inputsRef.current[0]?.focus()
+      return
+    }
+
+    // Cria a marca já autenticado
+    const pending = sessionStorage.getItem("fade_onboarding")
+    if (pending) {
+      await fetch("/api/marca", { method: "POST", body: pending })
+      sessionStorage.removeItem("fade_onboarding")
+    }
+    router.push("/dashboard")
   }
 
   return (
@@ -163,11 +205,11 @@ export default function Onboarding() {
 
           {step===lastStep && (
             <motion.div key="5" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              {!emailSent ? (
+              {!codigoEnviado ? (
                 <>
                   <div className="label" style={{marginBottom:8}}>ÚLTIMO PASSO</div>
                   <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:10}}>Qual seu e-mail?</h2>
-                  <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:22}}>Enviamos um link de acesso — sem senha, sem complicação.</p>
+                  <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:22}}>Enviamos um código de acesso — sem senha, sem complicação.</p>
                   <input className="inp" type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:18}} />
 
                   <button
@@ -185,11 +227,32 @@ export default function Onboarding() {
                       Li e aceito os <Link href="/termos" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
                     </span>
                   </button>
+                  {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginTop:14}}>{erro}</div>}
                 </>
               ) : (
-                <div style={{textAlign:"center",padding:"30px 0"}}>
-                  <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700,marginBottom:10}}>Link enviado ✓</div>
-                  <p style={{fontSize:".88rem",color:"var(--fg-dim)",lineHeight:1.5}}>Abre o e-mail que mandamos para <strong style={{color:"var(--fg)"}}>{email}</strong> e clica no link para entrar.</p>
+                <div style={{textAlign:"center"}}>
+                  <h2 className="font-display" style={{fontSize:"1.3rem",fontWeight:700,marginBottom:8}}>Digite o código</h2>
+                  <p style={{fontSize:".84rem",color:"var(--fg-dim)",marginBottom:24,lineHeight:1.5}}>
+                    Enviamos um código de 6 dígitos para <strong style={{color:"var(--fg)"}}>{email}</strong>
+                  </p>
+                  <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+                    {codigo.map((d, i) => (
+                      <input
+                        key={i}
+                        ref={el => { inputsRef.current[i] = el }}
+                        className="inp"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={d}
+                        onChange={e=>handleDigit(i, e.target.value)}
+                        onKeyDown={e=>handleKeyDown(i, e)}
+                        style={{width:42,height:50,textAlign:"center",fontSize:"1.2rem",fontWeight:600,padding:0}}
+                      />
+                    ))}
+                  </div>
+                  {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginBottom:14}}>{erro}</div>}
+                  {loading && <div style={{fontSize:".8rem",color:"var(--fg-faint)",marginBottom:14}}>Verificando...</div>}
+                  <button onClick={enviarCodigo} disabled={loading} className="btn-ghost" style={{width:"100%"}}>Reenviar código</button>
                 </div>
               )}
             </motion.div>
@@ -198,7 +261,7 @@ export default function Onboarding() {
         </AnimatePresence>
       </main>
 
-      {!emailSent && (
+      {!codigoEnviado && (
         <footer style={{maxWidth:480,margin:"0 auto",width:"100%",padding:"0 24px 32px",display:"flex",gap:10}}>
           {step>0 && (
             <button onClick={()=>setStep(s=>s-1)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6}}>
@@ -206,11 +269,11 @@ export default function Onboarding() {
             </button>
           )}
           <button
-            onClick={()=> step<lastStep ? setStep(s=>s+1) : finalizar()}
+            onClick={()=> step<lastStep ? setStep(s=>s+1) : enviarCodigo()}
             disabled={!canNext[step] || loading}
             className="btn-primary"
             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar link de acesso"}
+            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar código de acesso"}
           </button>
         </footer>
       )}
