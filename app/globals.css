@@ -185,3 +185,98 @@ a { color: inherit; text-decoration: none; }
   border-top: 1px solid rgba(255,255,255,0.14);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 -20px 60px -10px rgba(0,0,0,0.6);
 }
+
+/* ══════════════════════════════════
+   LED GLOW — azul brilhante de marca
+══════════════════════════════════ */
+:root {
+  --led: #4fb4ff;
+  --led-soft: rgba(79,180,255,0.35);
+  --led-glow: rgba(79,180,255,0.55);
+}
+
+/* Botões-chave com LED glow */
+.btn-led {
+  background: linear-gradient(180deg, #5cb8ff, #2f8fe0);
+  color: #04101c;
+  font-weight: 600;
+  font-size: .85rem;
+  border-radius: 10px;
+  padding: 12px 22px;
+  border: 1px solid rgba(255,255,255,0.25);
+  cursor: pointer;
+  box-shadow:
+    0 0 0 1px rgba(79,180,255,0.25),
+    0 4px 18px -2px var(--led-glow),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: box-shadow .2s, transform .1s, opacity .15s;
+}
+.btn-led:hover { box-shadow: 0 0 0 1px rgba(79,180,255,0.4), 0 6px 26px -2px var(--led-glow), inset 0 1px 0 rgba(255,255,255,0.5); }
+.btn-led:active { transform: scale(.98); }
+
+/* Ícone ativo com glow (nav inferior) */
+.icon-led-active {
+  color: var(--led) !important;
+  filter: drop-shadow(0 0 6px var(--led-glow));
+}
+
+@keyframes ledPulse {
+  0%, 100% { filter: drop-shadow(0 0 5px var(--led-glow)); }
+  50% { filter: drop-shadow(0 0 9px var(--led-glow)); }
+}
+.icon-led-pulse {
+  animation: ledPulse 2.4s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════
+   NAV INFERIOR
+══════════════════════════════════ */
+.tab-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  max-width: 480px; margin: 0 auto;
+  background: rgba(10,10,10,0.75);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: grid;
+  z-index: 50;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.tab-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 10px 0 8px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--fg-faint);
+  transition: color .2s;
+}
+.tab-item.active { color: var(--led); }
+
+/* ══════════════════════════════════
+   CURSOR COM GLOW (input de destaque)
+══════════════════════════════════ */
+@keyframes glowCaret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+.inp-glow {
+  position: relative;
+}
+.inp-glow .caret-glow {
+  position: absolute;
+  width: 2px;
+  height: 60%;
+  top: 20%;
+  background: linear-gradient(180deg, #c9a6ff, #ffb86b 55%, #fff);
+  filter: drop-shadow(0 0 6px rgba(255,184,107,0.7)) drop-shadow(0 0 10px rgba(201,166,255,0.5));
+  animation: glowCaret 1s step-end infinite;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════
+   HEADLINE — ênfase em itálico
+══════════════════════════════════ */
+.headline-em {
+  font-style: italic;
+  font-weight: 600;
+}
