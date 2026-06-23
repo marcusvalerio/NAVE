@@ -87,16 +87,13 @@ export default function Calendario() {
   return (
     <div style={{minHeight:"100vh"}}>
       <header style={{display:"flex",alignItems:"center",gap:14,padding:"16px 20px",borderBottom:"1px solid var(--border)"}}>
-        <button onClick={()=>router.push("/dashboard")} style={{background:"none",border:"none",color:"var(--fg-dim)",cursor:"pointer",display:"flex"}}>
-          <ArrowLeft size={18}/>
-        </button>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <CalIcon size={16} style={{color:"var(--acc)"}}/>
           <span className="font-display" style={{fontSize:"1rem",fontWeight:700}}>Calendário de conteúdo</span>
         </div>
       </header>
 
-      <main style={{maxWidth:520,margin:"0 auto",padding:"20px 16px 60px"}}>
+      <main style={{maxWidth:520,margin:"0 auto",padding:"20px 16px 100px"}}>
 
         {/* Navegação de mês */}
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
@@ -207,6 +204,7 @@ export default function Calendario() {
           </>
         )}
       </AnimatePresence>
+      <TabBar/>
     </div>
   )
 }
