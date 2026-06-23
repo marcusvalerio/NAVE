@@ -41,23 +41,8 @@ export default function Dashboard() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push("/onboarding"); return }
 
-    const pending = sessionStorage.getItem("fade_onboarding")
-    let marcaAtual: Marca | null = null
-
-    const { data: marcaExistente } = await supabase.from("marcas").select("*").eq("user_id", user.id).maybeSingle()
-
-    if (!marcaExistente && pending) {
-      const parsed = JSON.parse(pending)
-      const res = await fetch("/api/marca", { method: "POST", body: JSON.stringify(parsed) })
-      if (res.ok) {
-        sessionStorage.removeItem("fade_onboarding")
-        const { data } = await supabase.from("marcas").select("*").eq("user_id", user.id).maybeSingle()
-        marcaAtual = data
-      }
-    } else {
-      marcaAtual = marcaExistente
-    }
-
+    // A marca já é criada no auth/callback a partir do onboarding pendente.
+    const { data: marcaAtual } = await supabase.from("marcas").select("*").eq("user_id", user.id).maybeSingle()
     setMarca(marcaAtual)
 
     const { data: assin } = await supabase.from("assinaturas").select("*").eq("user_id", user.id).maybeSingle()
