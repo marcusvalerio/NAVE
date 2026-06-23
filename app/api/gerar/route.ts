@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import Anthropic from "@anthropic-ai/sdk"
 import Groq from "groq-sdk"
 import { supabaseServer } from "@/lib/supabase-server"
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 const TIPO_LABEL: Record<string, string> = {
@@ -18,7 +16,7 @@ function montarPrompt(marca: {
   nome: string; cidade: string; tipo: string; servicos: string[]
   publico: string[]; tom: string; palavras?: string[]
 }, tipo: string, rede: string, tema?: string) {
-  return `Você é um copywriter especialista em redes sociais para barbearias brasileiras.
+  return `Você é um especialista em marketing para barbearias brasileiras.
 
 PERFIL DA MARCA:
 - Nome: ${marca.nome}
@@ -32,24 +30,27 @@ ${marca.palavras?.length ? `- Palavras/expressões típicas do público: ${marca
 TAREFA:
 Crie um ${TIPO_LABEL[tipo] || "post"} para ${rede}${tema ? ` sobre: ${tema}` : ""}.
 
-Responda em JSON puro, sem markdown, sem crases, no formato exato:
-{"titulo": "título curto interno para identificar o conteúdo", "conteudo": "o texto do post/legenda/roteiro completo", "hashtags": ["tag1", "tag2", "tag3", "tag4", "tag5"]}
+Retorne APENAS um JSON válido.
+Nunca utilize markdown.
+Nunca utilize \`\`\`json.
+
+Responda exatamente no formato abaixo:
+{
+  "titulo": "",
+  "conteudo": "",
+  "cta": "",
+  "hashtags": []
+}
 
 Regras:
 - Tom de voz: ${marca.tom}.
 - Nunca use emoji em excesso (no máximo 2-3 no texto todo).
-- Hashtags em português, relevantes para barbearia e cidade (${marca.cidade}).
-- Se for roteiro de Reels, estruture em cenas curtas (Cena 1, Cena 2...) com indicação visual.
+- "titulo": título curto interno para identificar o conteúdo (não aparece no post).
+- "conteudo": o texto do post/legenda/roteiro completo, sem incluir o CTA nem as hashtags.
+- "cta": uma chamada para ação curta e direta, separada do corpo do texto.
+- "hashtags": array de 4 a 6 hashtags em português, relevantes para barbearia e cidade (${marca.cidade}), sem o caractere #.
+- Se for roteiro de Reels, estruture "conteudo" em cenas curtas (Cena 1, Cena 2...) com indicação visual.
 - Nunca invente promoções, preços ou disponibilidade que não foram informados.`
-}
-
-async function gerarComClaude(prompt: string) {
-  const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
-  })
-  return msg.content.find(b => b.type === "text")?.text || "{}"
 }
 
 async function gerarComGroq(prompt: string) {
@@ -57,6 +58,7 @@ async function gerarComGroq(prompt: string) {
     model: "llama-3.3-70b-versatile",
     messages: [{ role: "user", content: prompt }],
     max_tokens: 1024,
+    temperature: 0.7,
   })
   return completion.choices[0]?.message?.content || "{}"
 }
@@ -66,8 +68,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const { marca_id, tipo, rede, tema, motor } = await request.json()
-  const motorEscolhido: "claude" | "groq" = motor === "groq" ? "groq" : "claude"
+  const { marca_id, tipo, rede, tema } = await request.json()
 
   const { data: assinatura } = await supabase
     .from("assinaturas")
@@ -98,23 +99,22 @@ export async function POST(request: NextRequest) {
 
   let raw = ""
   try {
-    raw = motorEscolhido === "groq" ? await gerarComGroq(prompt) : await gerarComClaude(prompt)
+    raw = await gerarComGroq(prompt)
   } catch {
-    // Fallback automático: se um motor falhar, tenta o outro antes de desistir
-    try {
-      raw = motorEscolhido === "groq" ? await gerarComClaude(prompt) : await gerarComGroq(prompt)
-    } catch {
-      return NextResponse.json({ error: "Erro ao gerar conteúdo. Tente novamente." }, { status: 500 })
-    }
+    return NextResponse.json({ error: "Erro ao gerar conteúdo. Tente novamente." }, { status: 500 })
   }
 
-  let parsed: { titulo: string; conteudo: string; hashtags: string[] }
+  let parsed: { titulo: string; conteudo: string; cta?: string; hashtags: string[] }
   try {
     const clean = raw.replace(/```json|```/g, "").trim()
     parsed = JSON.parse(clean)
   } catch {
     return NextResponse.json({ error: "Erro ao interpretar a resposta gerada." }, { status: 500 })
   }
+
+  const conteudoFinal = parsed.cta
+    ? `${parsed.conteudo}\n\n${parsed.cta}`
+    : parsed.conteudo
 
   const { data: novoConteudo, error: insertError } = await supabase
     .from("conteudos")
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
       tipo,
       rede,
       titulo: parsed.titulo,
-      conteudo: parsed.conteudo,
+      conteudo: conteudoFinal,
       hashtags: parsed.hashtags || [],
       status: "rascunho",
     })
@@ -139,12 +139,10 @@ export async function POST(request: NextRequest) {
     .update({ conteudos_usados_mes: novoUso })
     .eq("user_id", user.id)
 
-  // ── AUTOMAÇÃO (substitui fluxo n8n) ──
-  // Regra: ao se aproximar do limite do plano, sinaliza para o front sugerir upgrade.
   let aviso: string | null = null
   if (plano && novoUso === Math.ceil(plano.limite_conteudos_mes * 0.8)) {
     aviso = "Você já usou 80% dos conteúdos deste mês. Considere um upgrade para não ficar sem."
   }
 
-  return NextResponse.json({ conteudo: novoConteudo, motor: motorEscolhido, aviso })
+  return NextResponse.json({ conteudo: novoConteudo, aviso })
 }
