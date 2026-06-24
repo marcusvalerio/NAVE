@@ -1,5 +1,6 @@
 "use client"
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { ArrowRight, ArrowLeft, Scissors, Check } from "lucide-react"
 import Link from "next/link"
@@ -12,11 +13,14 @@ const TONS = ["Direto e confiante","Descontraído e brincalhão","Sofisticado e 
 const REDES_OPCOES = ["Instagram","TikTok","Facebook","WhatsApp"]
 
 export default function Onboarding() {
+  const router = useRouter()
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
-  const [emailSent, setEmailSent] = useState(false)
+  const [codigoEnviado, setCodigoEnviado] = useState(false)
+  const [codigo, setCodigo] = useState(["", "", "", "", "", ""])
   const [erro, setErro] = useState("")
+  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
   const [adminNome, setAdminNome] = useState("")
   const [adminWhatsapp, setAdminWhatsapp] = useState("")
@@ -44,22 +48,21 @@ export default function Onboarding() {
   ]
   const lastStep = steps.length - 1
 
-  const finalizar = async () => {
+  const enviarCodigo = async () => {
     if (!email.trim() || !aceitouPolitica) return
     setLoading(true)
     setErro("")
     const supabase = supabaseBrowser()
-    const palavras = palavrasInput.split(",").map(p => p.trim()).filter(Boolean)
 
     const dadosOnboarding = {
-      nome, cidade, tipo, servicos, publico, tom, palavras, redes,
-      admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
+      nome, cidade, tipo, servicos, publico, tom,
+      palavras: palavrasInput.split(",").map(p => p.trim()).filter(Boolean),
+      redes, admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
       consentimento_aceito_em: new Date().toISOString(),
       consentimento_versao: "v2",
     }
 
-    // Salva no banco (tabela onboarding_pendente) — sobrevive à troca de aba pelo link de e-mail,
-    // diferente do sessionStorage, que se perde nesse fluxo.
+    // Salva no banco — sobrevive mesmo sem troca de aba, e funciona dentro do PWA
     const { error: dbError } = await supabase
       .from("onboarding_pendente")
       .upsert({ email, dados: dadosOnboarding }, { onConflict: "email" })
@@ -70,27 +73,65 @@ export default function Onboarding() {
       return
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-    })
-
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
     setLoading(false)
     if (error) {
-      setErro("Não conseguimos enviar o link agora. Tenta de novo em alguns segundos.")
+      setErro("Não conseguimos enviar o código agora. Tenta de novo em alguns segundos.")
     } else {
-      setEmailSent(true)
+      setCodigoEnviado(true)
+      setTimeout(() => inputsRef.current[0]?.focus(), 100)
     }
+  }
+
+  const handleDigit = (idx: number, val: string) => {
+    if (!/^\d?$/.test(val)) return
+    const novo = [...codigo]
+    novo[idx] = val
+    setCodigo(novo)
+    if (val && idx < 5) inputsRef.current[idx + 1]?.focus()
+    if (novo.every(d => d !== "")) confirmarCodigo(novo.join(""))
+  }
+
+  const handleKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !codigo[idx] && idx > 0) inputsRef.current[idx - 1]?.focus()
+  }
+
+  const confirmarCodigo = async (token: string) => {
+    setLoading(true)
+    setErro("")
+    const supabase = supabaseBrowser()
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" })
+    if (error) {
+      setLoading(false)
+      setErro("Código inválido ou expirado. Confere os números ou peça um novo código.")
+      setCodigo(["", "", "", "", "", ""])
+      inputsRef.current[0]?.focus()
+      return
+    }
+
+    // Cria a marca a partir dos dados pendentes (já autenticado nesse ponto)
+    await fetch("/api/marca", {
+      method: "POST",
+      body: JSON.stringify({
+        nome, cidade, tipo, servicos, publico, tom,
+        palavras: palavrasInput.split(",").map(p => p.trim()).filter(Boolean),
+        redes, admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
+        consentimento_aceito_em: new Date().toISOString(),
+        consentimento_versao: "v2",
+      }),
+    })
+    await supabase.from("onboarding_pendente").delete().eq("email", email)
+    router.push("/dashboard")
   }
 
   return (
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column"}}>
-      <header style={{padding:"20px 24px",display:"flex",alignItems:"center",gap:8}}>
+      <header style={{padding:"20px 24px",display:"flex",alignItems:"center",gap:8,flexShrink:0}}>
         <Scissors size={16} style={{color:"var(--acc)"}} />
         <span className="font-brand" style={{fontSize:"1rem"}}>FADE Conteúdo</span>
       </header>
 
-      <div style={{display:"flex",gap:4,padding:"0 24px",marginBottom:32,maxWidth:480,margin:"0 auto",width:"100%"}}>
+      <div style={{display:"flex",gap:4,padding:"0 24px",marginBottom:36,maxWidth:480,margin:"0 auto",width:"100%",flexShrink:0}}>
         {steps.map((s,i)=>(
           <div key={s} style={{flex:1,height:3,borderRadius:2,background:i<=step?"var(--acc)":"var(--border)",transition:"background .2s"}}/>
         ))}
@@ -101,13 +142,13 @@ export default function Onboarding() {
 
           {step===0 && (
             <motion.div key="0" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              <div className="label" style={{marginBottom:8}}>ANTES DE TUDO</div>
-              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Como você se chama?</h2>
+              <div className="label" style={{marginBottom:10}}>ANTES DE TUDO</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:28,letterSpacing:"-.015em",lineHeight:1.15}}>Como você se chama?</h2>
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <input className="inp" placeholder="Seu nome" value={adminNome} onChange={e=>setAdminNome(e.target.value)} />
                 <div>
                   <input className="inp" placeholder="WhatsApp (opcional)" value={adminWhatsapp} onChange={e=>setAdminWhatsapp(e.target.value)} />
-                  <p style={{fontSize:".72rem",color:"var(--fg-faint)",marginTop:8,lineHeight:1.5}}>
+                  <p style={{fontSize:".72rem",color:"var(--fg-faint)",marginTop:9,lineHeight:1.5}}>
                     Só usamos pra falar com você sobre sua conta — nunca pra divulgação.
                   </p>
                 </div>
@@ -117,13 +158,13 @@ export default function Onboarding() {
 
           {step===1 && (
             <motion.div key="1" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              <div className="label" style={{marginBottom:8}}>SOBRE A MARCA</div>
-              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Como sua barbearia se chama?</h2>
+              <div className="label" style={{marginBottom:10}}>SOBRE A MARCA</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:28,letterSpacing:"-.015em",lineHeight:1.15}}>Como sua barbearia se chama?</h2>
               <div style={{display:"flex",flexDirection:"column",gap:14}}>
                 <input className="inp" placeholder="Nome da barbearia" value={nome} onChange={e=>setNome(e.target.value)} />
                 <input className="inp" placeholder="Cidade" value={cidade} onChange={e=>setCidade(e.target.value)} />
-                <div style={{marginTop:6}}>
-                  <div className="label" style={{marginBottom:10}}>TIPO DE BARBEARIA</div>
+                <div style={{marginTop:8}}>
+                  <div className="label" style={{marginBottom:11}}>TIPO DE BARBEARIA</div>
                   <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                     {TIPOS.map(t=>(
                       <button key={t} onClick={()=>setTipo(t)} className={`chip ${tipo===t?"chip-on":""}`}>{t}</button>
@@ -136,8 +177,8 @@ export default function Onboarding() {
 
           {step===2 && (
             <motion.div key="2" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              <div className="label" style={{marginBottom:8}}>SERVIÇOS</div>
-              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>O que vocês oferecem?</h2>
+              <div className="label" style={{marginBottom:10}}>SERVIÇOS</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:28,letterSpacing:"-.015em",lineHeight:1.15}}>O que vocês oferecem?</h2>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                 {SERVICOS_OPCOES.map(s=>(
                   <button key={s} onClick={()=>toggle(servicos,setServicos,s)} className={`chip ${servicos.includes(s)?"chip-on":""}`}>{s}</button>
@@ -148,29 +189,29 @@ export default function Onboarding() {
 
           {step===3 && (
             <motion.div key="3" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              <div className="label" style={{marginBottom:8}}>PÚBLICO E VOZ</div>
-              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Quem é seu cliente e como você fala com ele?</h2>
-              <div className="label" style={{marginBottom:10}}>PÚBLICO PRINCIPAL</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:22}}>
+              <div className="label" style={{marginBottom:10}}>PÚBLICO E VOZ</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:28,letterSpacing:"-.015em",lineHeight:1.15}}>Quem é seu cliente e como você fala com ele?</h2>
+              <div className="label" style={{marginBottom:11}}>PÚBLICO PRINCIPAL</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:24}}>
                 {PUBLICO_OPCOES.map(p=>(
                   <button key={p} onClick={()=>toggle(publico,setPublico,p)} className={`chip ${publico.includes(p)?"chip-on":""}`}>{p}</button>
                 ))}
               </div>
-              <div className="label" style={{marginBottom:10}}>TOM DE VOZ</div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:22}}>
+              <div className="label" style={{marginBottom:11}}>TOM DE VOZ</div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:24}}>
                 {TONS.map(t=>(
                   <button key={t} onClick={()=>setTom(t)} className={`chip ${tom===t?"chip-on":""}`}>{t}</button>
                 ))}
               </div>
-              <div className="label" style={{marginBottom:10}}>PALAVRAS QUE SEU CLIENTE USA (opcional)</div>
+              <div className="label" style={{marginBottom:11}}>PALAVRAS QUE SEU CLIENTE USA (opcional)</div>
               <input className="inp" placeholder="ex: estiloso, navalhado, raiz" value={palavrasInput} onChange={e=>setPalavrasInput(e.target.value)} />
             </motion.div>
           )}
 
           {step===4 && (
             <motion.div key="4" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              <div className="label" style={{marginBottom:8}}>CANAIS</div>
-              <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:24}}>Onde você posta?</h2>
+              <div className="label" style={{marginBottom:10}}>CANAIS</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:28,letterSpacing:"-.015em",lineHeight:1.15}}>Onde você posta?</h2>
               <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
                 {REDES_OPCOES.map(r=>(
                   <button key={r} onClick={()=>toggle(redes,setRedes,r)} className={`chip ${redes.includes(r)?"chip-on":""}`}>{r}</button>
@@ -181,12 +222,12 @@ export default function Onboarding() {
 
           {step===lastStep && (
             <motion.div key="5" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              {!emailSent ? (
+              {!codigoEnviado ? (
                 <>
-                  <div className="label" style={{marginBottom:8}}>ÚLTIMO PASSO</div>
-                  <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:10}}>Qual seu e-mail?</h2>
-                  <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:22}}>Enviamos um link de acesso — sem senha, sem complicação.</p>
-                  <input className="inp" type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:18}} />
+                  <div className="label" style={{marginBottom:10}}>ÚLTIMO PASSO</div>
+                  <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:10,letterSpacing:"-.015em",lineHeight:1.15}}>Qual seu e-mail?</h2>
+                  <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:24,lineHeight:1.5}}>Enviamos um código de acesso — sem senha, sem complicação.</p>
+                  <input className="inp" type="email" inputMode="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:18}} />
 
                   <button
                     onClick={()=>setAceitouPolitica(v=>!v)}
@@ -206,9 +247,29 @@ export default function Onboarding() {
                   {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginTop:14}}>{erro}</div>}
                 </>
               ) : (
-                <div style={{textAlign:"center",padding:"30px 0"}}>
-                  <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700,marginBottom:10}}>Link enviado ✓</div>
-                  <p style={{fontSize:".88rem",color:"var(--fg-dim)",lineHeight:1.5}}>Abre o e-mail que mandamos para <strong style={{color:"var(--fg)"}}>{email}</strong> e clica no link para entrar.</p>
+                <div style={{textAlign:"center"}}>
+                  <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:10,letterSpacing:"-.01em"}}>Digite o código</h2>
+                  <p style={{fontSize:".84rem",color:"var(--fg-dim)",marginBottom:26,lineHeight:1.5}}>
+                    Enviamos um código de 6 dígitos para <strong style={{color:"var(--fg)"}}>{email}</strong>
+                  </p>
+                  <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
+                    {codigo.map((d, i) => (
+                      <input
+                        key={i}
+                        ref={el => { inputsRef.current[i] = el }}
+                        className="inp"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={d}
+                        onChange={e=>handleDigit(i, e.target.value)}
+                        onKeyDown={e=>handleKeyDown(i, e)}
+                        style={{width:42,height:50,textAlign:"center",fontSize:"1.2rem",fontWeight:600,padding:0}}
+                      />
+                    ))}
+                  </div>
+                  {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginBottom:14}}>{erro}</div>}
+                  {loading && <div style={{fontSize:".8rem",color:"var(--fg-faint)",marginBottom:14}}>Verificando...</div>}
+                  <button onClick={enviarCodigo} disabled={loading} className="btn-ghost" style={{width:"100%"}}>Reenviar código</button>
                 </div>
               )}
             </motion.div>
@@ -217,19 +278,19 @@ export default function Onboarding() {
         </AnimatePresence>
       </main>
 
-      {!emailSent && (
-        <footer style={{maxWidth:480,margin:"0 auto",width:"100%",padding:"0 24px 32px",display:"flex",gap:10}}>
+      {!codigoEnviado && (
+        <footer style={{maxWidth:480,margin:"0 auto",width:"100%",padding:"0 24px 32px",display:"flex",gap:10,flexShrink:0}}>
           {step>0 && (
             <button onClick={()=>setStep(s=>s-1)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6}}>
               <ArrowLeft size={14}/> Voltar
             </button>
           )}
           <button
-            onClick={()=> step<lastStep ? setStep(s=>s+1) : finalizar()}
+            onClick={()=> step<lastStep ? setStep(s=>s+1) : enviarCodigo()}
             disabled={!canNext[step] || loading}
-            className="btn-primary"
+            className="btn-led"
             style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar link de acesso"}
+            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar código de acesso"}
           </button>
         </footer>
       )}
