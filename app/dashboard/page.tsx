@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Scissors, LogOut, PenSquare, TrendingUp, FileText, Calendar as CalIcon } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import { TabBar } from "@/components/tab-bar"
+import { DashboardSkeleton } from "@/components/skeleton"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 
 export default function Dashboard() {
@@ -48,9 +49,17 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div className="font-display" style={{color:"var(--fg-faint)"}}>Carregando...</div>
-    </div>
+    return (
+      <div style={{minHeight:"100vh"}}>
+        <header className="glass-nav" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",position:"sticky",top:0,zIndex:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <Scissors size={16} style={{color:"var(--acc)"}} />
+            <span className="font-brand" style={{fontSize:"1rem"}}>FADE Conteúdo</span>
+          </div>
+        </header>
+        <DashboardSkeleton/>
+      </div>
+    )
   }
 
   const usados = assinatura?.conteudos_usados_mes || 0
@@ -75,9 +84,15 @@ export default function Dashboard() {
         <button onClick={sair} style={{background:"none",border:"none",color:"var(--fg-faint)",cursor:"pointer"}}><LogOut size={16}/></button>
       </header>
 
-      <main style={{maxWidth:680,margin:"0 auto",padding:"28px 20px 100px"}}>
+      <main style={{maxWidth:680,margin:"0 auto",padding:"28px 20px 100px",position:"relative"}}>
 
-        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.35}} style={{marginBottom:22}}>
+        <div className="aurora-bg">
+          <div className="aurora-blob b1"/>
+          <div className="aurora-blob b2"/>
+          <div className="aurora-blob b3"/>
+        </div>
+
+        <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.35}} style={{marginBottom:22,position:"relative",zIndex:1}}>
           <h1 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,letterSpacing:"-.01em"}}>
             {periodo}{primeiroNome ? `, ${primeiroNome}` : ""}!
           </h1>
@@ -85,7 +100,7 @@ export default function Dashboard() {
         </motion.div>
 
         {/* Status do plano */}
-        <div className="glass" style={{padding:"16px 18px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div className="glass" style={{padding:"16px 18px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:1}}>
           <div>
             <div className="label" style={{marginBottom:5}}>PLANO {plano?.nome?.toUpperCase() || "FREE"}</div>
             <div style={{fontSize:".82rem",color:"var(--fg-dim)"}}>{usados} de {limite} conteúdos usados este mês</div>
@@ -101,7 +116,7 @@ export default function Dashboard() {
         </div>
 
         {/* Métricas rápidas */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24,position:"relative",zIndex:1}}>
           <div className="glass" style={{padding:"14px 12px",textAlign:"center"}}>
             <FileText size={16} style={{color:"var(--fg-faint)",marginBottom:6}}/>
             <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700}}>{rascunhos}</div>
@@ -120,7 +135,7 @@ export default function Dashboard() {
         </div>
 
         {/* CTA pra gerar conteúdo */}
-        <button onClick={()=>router.push("/conteudos")} className="btn-led" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <button onClick={()=>router.push("/conteudos")} className="btn-led" style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,position:"relative",zIndex:1}}>
           <PenSquare size={15}/> Gerar novo conteúdo
         </button>
 
