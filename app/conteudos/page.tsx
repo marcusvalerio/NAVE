@@ -6,6 +6,7 @@ import { Scissors, Sparkles, Copy, LogOut, Check, Trash2 } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 import { TabBar } from "@/components/tab-bar"
+import { CardSkeleton } from "@/components/skeleton"
 
 const TIPOS = [
   { id: "post", label: "Post" },
@@ -111,9 +112,19 @@ export default function Dashboard() {
   }
 
   if (loading) {
-    return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div className="font-display" style={{color:"var(--fg-faint)"}}>Carregando...</div>
-    </div>
+    return (
+      <div style={{minHeight:"100vh"}}>
+        <header className="glass-nav" style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",position:"sticky",top:0,zIndex:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <Scissors size={16} style={{color:"var(--acc)"}} />
+            <span className="font-brand" style={{fontSize:"1rem"}}>FADE Conteúdo</span>
+          </div>
+        </header>
+        <main style={{maxWidth:680,margin:"0 auto",padding:"28px 20px 100px"}}>
+          <CardSkeleton/>
+        </main>
+      </div>
+    )
   }
 
   const usados = assinatura?.conteudos_usados_mes || 0
