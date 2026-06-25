@@ -25,6 +25,7 @@ export default function Dashboard() {
   const [plano, setPlano] = useState<Plano | null>(null)
   const [conteudos, setConteudos] = useState<Conteudo[]>([])
 
+  const [dataAgendada, setDataAgendada] = useState("")
   const [tipo, setTipo] = useState("post")
   const [rede, setRede] = useState("instagram")
   const [tema, setTema] = useState("")
@@ -70,7 +71,7 @@ export default function Dashboard() {
     try {
       const res = await fetch("/api/gerar", {
         method: "POST",
-        body: JSON.stringify({ marca_id: marca.id, tipo, rede, tema }),
+        body: JSON.stringify({ marca_id: marca.id, tipo, rede, tema, data_agendada: dataAgendada || null }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -79,6 +80,7 @@ export default function Dashboard() {
       }
       setConteudos(prev => [data.conteudo, ...prev])
       setTema("")
+      setDataAgendada("")
       if (data.aviso) setAviso(data.aviso)
       if (assinatura) setAssinatura({ ...assinatura, conteudos_usados_mes: assinatura.conteudos_usados_mes + 1 })
     } catch {
@@ -195,6 +197,9 @@ export default function Dashboard() {
 
           <div className="label" style={{marginBottom:8}}>TEMA (OPCIONAL)</div>
           <input className="inp" placeholder="ex: promoção de terça, novo serviço, dica de cuidado" value={tema} onChange={e=>setTema(e.target.value)} style={{marginBottom:16}}/>
+
+          <div className="label" style={{marginBottom:8}}>AGENDAR PARA (OPCIONAL)</div>
+          <input type="date" className="inp" value={dataAgendada} onChange={e=>setDataAgendada(e.target.value)} style={{marginBottom:16,colorScheme:"dark"}}/>
 
           {erro && (
             <div style={{display:"flex",alignItems:"flex-start",gap:8,fontSize:".8rem",color:"#ef4444",marginBottom:14,background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:8,padding:"10px 12px"}}>
