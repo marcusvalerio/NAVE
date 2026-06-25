@@ -53,6 +53,13 @@ export default function Calendario() {
     setConteudos(prev => prev.map(c => c.id === id ? { ...c, status: status as Conteudo["status"] } : c))
   }
 
+  const atualizarData = async (id: string, novaData: string) => {
+    const supabase = supabaseBrowser()
+    const iso = novaData ? new Date(novaData + "T12:00:00").toISOString() : null
+    await supabase.from("conteudos").update({ data_agendada: iso }).eq("id", id)
+    setConteudos(prev => prev.map(c => c.id === id ? { ...c, data_agendada: iso } : c))
+  }
+
   if (loading) return <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"var(--fg-faint)"}}>Carregando...</div>
 
   const ano = cursor.getFullYear()
@@ -65,7 +72,7 @@ export default function Calendario() {
 
   const conteudosPorDia = (dia: number) => {
     const data = new Date(ano, mes, dia)
-    return conteudos.filter(c => mesmoDia(new Date(c.created_at), data))
+    return conteudos.filter(c => mesmoDia(new Date(c.data_agendada || c.created_at), data))
   }
 
   const statusDominante = (lista: Conteudo[]) => {
@@ -81,7 +88,7 @@ export default function Calendario() {
   ]
 
   const conteudosDoDiaSelecionado = diaSelecionado
-    ? conteudos.filter(c => mesmoDia(new Date(c.created_at), diaSelecionado))
+    ? conteudos.filter(c => mesmoDia(new Date(c.data_agendada || c.created_at), diaSelecionado))
     : []
 
   return (
@@ -186,16 +193,24 @@ export default function Calendario() {
                           <span style={{fontSize:".68rem",color:"var(--fg-faint)"}}>{STATUS_LABEL[c.status]}</span>
                         </div>
                       </div>
-                      <select
-                        value={c.status}
-                        onChange={e=>atualizarStatus(c.id, e.target.value)}
-                        className="inp"
-                        style={{fontSize:".78rem",padding:"8px 10px"}}>
-                        <option value="rascunho">Gerado, não produzido</option>
-                        <option value="agendado">Produzido, pronto pra postar</option>
-                        <option value="publicado">Finalizado e postado</option>
-                        <option value="arquivado">Arquivado</option>
-                      </select>
+                      <div style={{display:"flex",gap:8}}>
+                        <input
+                          type="date"
+                          value={c.data_agendada ? c.data_agendada.split("T")[0] : ""}
+                          onChange={e=>atualizarData(c.id, e.target.value)}
+                          className="inp"
+                          style={{fontSize:".74rem",padding:"8px 10px",colorScheme:"dark",flex:1}}/>
+                        <select
+                          value={c.status}
+                          onChange={e=>atualizarStatus(c.id, e.target.value)}
+                          className="inp"
+                          style={{fontSize:".74rem",padding:"8px 10px",flex:1}}>
+                          <option value="rascunho">Gerado, não produzido</option>
+                          <option value="agendado">Produzido, pronto pra postar</option>
+                          <option value="publicado">Finalizado e postado</option>
+                          <option value="arquivado">Arquivado</option>
+                        </select>
+                      </div>
                     </div>
                   ))}
                 </div>
