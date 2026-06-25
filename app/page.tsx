@@ -8,7 +8,7 @@ const PLANOS = [
   { id: "free", nome: "Free", preco: 0, destaque: false, recursos: ["5 conteúdos/mês", "1 marca", "Templates básicos"] },
   { id: "starter", nome: "Starter", preco: 49, destaque: false, recursos: ["30 conteúdos/mês", "1 marca", "Calendário de conteúdo", "Templates premium"] },
   { id: "pro", nome: "Pro", preco: 97, destaque: true, recursos: ["100 conteúdos/mês", "3 marcas", "Calendário + agendamento", "Dashboard de métricas"] },
-  { id: "estrategia", nome: "FADE Estratégia", preco: 297, destaque: false, recursos: ["Tudo do plano Pro", "Consultoria mensal com Marcus", "Plano de conteúdo personalizado", "Acompanhamento de resultados"] },
+  { id: "estrategia", nome: "FADE Estratégia", preco: null, destaque: false, recursos: ["Tudo do plano Pro", "Consultoria mensal com Marcus", "Plano de conteúdo personalizado", "Acompanhamento de resultados"] },
 ]
 
 const fadeUp = (delay = 0) => ({
@@ -93,8 +93,8 @@ export default function Home() {
         </motion.p>
 
         <motion.div {...fadeUp(0.52)} style={{display:"flex",gap:12,justifyContent:"center",position:"relative",zIndex:2}}>
-          <Link href="/onboarding" className="btn-primary" style={{display:"inline-flex",alignItems:"center",gap:8}}>
-            Criar minha marca <ArrowRight size={15} />
+          <Link href="/onboarding" className="btn-led" style={{display:"inline-flex",alignItems:"center",gap:8,fontSize:"0.95rem",padding:"14px 28px"}}>
+            Começar gratuitamente <ArrowRight size={16} />
           </Link>
         </motion.div>
       </section>
@@ -186,8 +186,8 @@ export default function Home() {
               {p.destaque && <div className="label" style={{color:"var(--acc)",marginBottom:10}}>MAIS POPULAR</div>}
               <div style={{fontWeight:600,fontSize:"1rem",marginBottom:4}}>{p.nome}</div>
               <div style={{display:"flex",alignItems:"baseline",gap:4,marginBottom:18}}>
-                <span className="font-display" style={{fontSize:"1.8rem",fontWeight:700}}>{p.preco===0?"Grátis":`R$${p.preco}`}</span>
-                {p.preco>0 && <span style={{fontSize:".78rem",color:"var(--fg-faint)"}}>/mês</span>}
+                <span className="font-display" style={{fontSize:p.preco===null?"1.3rem":"1.8rem"}}>{p.preco===null?"Sob consulta":p.preco===0?"Grátis":`R$${p.preco}`}</span>
+                {!!p.preco && <span style={{fontSize:".78rem",color:"var(--fg-faint)"}}>/mês</span>}
               </div>
               {p.recursos.map(r=>(
                 <div key={r} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:9}}>
@@ -195,6 +195,12 @@ export default function Home() {
                   <span style={{fontSize:".80rem",color:"var(--fg-dim)",lineHeight:1.4}}>{r}</span>
                 </div>
               ))}
+              <Link
+                href={p.id === "estrategia" ? "/onboarding?plano=estrategia&contato=1" : `/onboarding?plano=${p.id}`}
+                className={p.destaque ? "btn-led" : "btn-ghost"}
+                style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:6,width:"100%"}}>
+                {p.id === "estrategia" ? "Falar com a gente" : p.id === "free" ? "Começar grátis" : "Escolher plano"}
+              </Link>
             </motion.div>
           ))}
         </div>
