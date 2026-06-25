@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const { marca_id, tipo, rede, tema } = await request.json()
+  const { marca_id, tipo, rede, tema, data_agendada } = await request.json()
 
   const { data: assinatura } = await supabase
     .from("assinaturas")
@@ -126,7 +126,8 @@ export async function POST(request: NextRequest) {
       titulo: parsed.titulo,
       conteudo: conteudoFinal,
       hashtags: parsed.hashtags || [],
-      status: "rascunho",
+      status: data_agendada ? "agendado" : "rascunho",
+      data_agendada: data_agendada || null,
     })
     .select()
     .single()
