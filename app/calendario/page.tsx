@@ -165,7 +165,7 @@ export default function Calendario() {
             <motion.div
               initial={{y:"100%"}} animate={{y:0}} exit={{y:"100%"}}
               transition={{type:"tween",duration:.25,ease:[.22,1,.36,1]}}
-              className="glass-sheet" style={{position:"fixed",left:0,right:0,bottom:0,maxWidth:520,margin:"0 auto",zIndex:50,borderRadius:"20px 20px 0 0",padding:"18px 20px",maxHeight:"70vh",overflowY:"auto"}}>
+              className="glass-sheet" style={{position:"fixed",left:0,right:0,bottom:90,maxWidth:520,margin:"0 auto",zIndex:40,borderRadius:"20px 20px 0 0",padding:"18px 20px",maxHeight:"60vh",overflowY:"auto"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
                 <span className="font-display" style={{fontWeight:700,fontSize:"1rem"}}>
                   {diaSelecionado.getDate()} de {MESES[diaSelecionado.getMonth()]}
