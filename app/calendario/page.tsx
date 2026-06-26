@@ -2,9 +2,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowLeft, ChevronLeft, ChevronRight, Calendar as CalIcon, X } from "lucide-react"
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, X } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import type { Conteudo } from "@/lib/types"
+import { TabBar } from "@/components/tab-bar"
 
 // Sinalizadores conforme definido:
 // vermelho = não tem nada gerado · laranja = gerado e não produzido
