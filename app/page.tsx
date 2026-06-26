@@ -74,7 +74,11 @@ export default function Home() {
 
       {/* HERO */}
       <section style={{maxWidth:780,margin:"0 auto",padding:"70px 24px 50px",textAlign:"center",position:"relative"}}>
-        <div className="ambient-glow" style={{top:-160,left:"50%",transform:"translateX(-50%)"}} />
+        <div className="aurora-bg" style={{position:"absolute",inset:"-30% -10% auto -10%",height:380,zIndex:0}}>
+          <div className="aurora-blob b1"/>
+          <div className="aurora-blob b2"/>
+          <div className="aurora-blob b3"/>
+        </div>
 
         <motion.div {...fadeUp(0.05)} className="label" style={{marginBottom:18,position:"relative",zIndex:2}}>CONTEÚDO PARA BARBEARIAS</motion.div>
 
