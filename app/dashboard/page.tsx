@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { Scissors, LogOut, PenSquare, TrendingUp, FileText, Calendar as CalIcon } from "lucide-react"
+import { Scissors, LogOut, PenSquare, TrendingUp, FileText, Calendar as CalIcon, CheckCircle2 } from "lucide-react"
 import { supabaseBrowser } from "@/lib/supabase-client"
 import { TabBar } from "@/components/tab-bar"
 import { DashboardSkeleton } from "@/components/skeleton"
+import { RingMetric, BarsMetric } from "@/components/mini-charts"
 import type { Marca, Conteudo, Assinatura, Plano } from "@/lib/types"
 
 export default function Dashboard() {
@@ -73,6 +74,21 @@ export default function Dashboard() {
   const publicados = conteudos.filter(c => c.status === "publicado").length
   const agendados = conteudos.filter(c => c.status === "agendado").length
   const rascunhos = conteudos.filter(c => c.status === "rascunho").length
+  const total = conteudos.length
+
+  // Distribuição dos últimos 7 dias (conteúdos criados por dia) — alimenta o gráfico de barras
+  const hoje = new Date()
+  const ultimos7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(hoje)
+    d.setDate(d.getDate() - (6 - i))
+    return conteudos.filter(c => {
+      const cd = new Date(c.created_at)
+      return cd.toDateString() === d.toDateString()
+    }).length
+  })
+
+  // Taxa de conclusão (publicado / total) — alimenta o anel
+  const taxaConclusao = total > 0 ? publicados : 0
 
   return (
     <div style={{minHeight:"100vh"}}>
@@ -93,45 +109,69 @@ export default function Dashboard() {
         </div>
 
         <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{duration:.35}} style={{marginBottom:22,position:"relative",zIndex:1}}>
-          <h1 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,letterSpacing:"-.01em"}}>
+          <h1 className="font-display" style={{fontSize:"1.6rem",letterSpacing:"-.01em"}}>
             {periodo}{primeiroNome ? `, ${primeiroNome}` : ""}!
           </h1>
           <p style={{fontSize:".84rem",color:"var(--fg-dim)",marginTop:4}}>Aqui está toda a evolução da {marca?.nome || "sua marca"}.</p>
         </motion.div>
 
-        {/* Status do plano */}
-        <div className="glass" style={{padding:"16px 18px",marginBottom:20,display:"flex",justifyContent:"space-between",alignItems:"center",position:"relative",zIndex:1}}>
-          <div>
-            <div className="label" style={{marginBottom:5}}>PLANO {plano?.nome?.toUpperCase() || "FREE"}</div>
-            <div style={{fontSize:".82rem",color:"var(--fg-dim)"}}>{usados} de {limite} conteúdos usados este mês</div>
-          </div>
-          <div style={{width:50,height:50,position:"relative"}}>
-            <svg width="50" height="50" viewBox="0 0 50 50" style={{transform:"rotate(-90deg)"}}>
-              <circle cx="25" cy="25" r="21" fill="none" stroke="var(--border)" strokeWidth="4"/>
-              <circle cx="25" cy="25" r="21" fill="none" stroke={pct>=90?"#ef4444":"var(--acc)"} strokeWidth="4" strokeLinecap="round"
-                strokeDasharray={`${2*Math.PI*21}`} strokeDashoffset={`${2*Math.PI*21*(1-pct/100)}`}/>
-            </svg>
-            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",fontSize:".68rem",fontWeight:600}}>{pct}%</div>
-          </div>
-        </div>
+        {/* Grid 2×2 — estilo Activity, com gráficos reais */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:22,position:"relative",zIndex:1}}>
 
-        {/* Métricas rápidas */}
-        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:24,position:"relative",zIndex:1}}>
-          <div className="glass" style={{padding:"14px 12px",textAlign:"center"}}>
-            <FileText size={16} style={{color:"var(--fg-faint)",marginBottom:6}}/>
-            <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700}}>{rascunhos}</div>
-            <div style={{fontSize:".62rem",color:"var(--fg-faint)"}}>Rascunhos</div>
-          </div>
-          <div className="glass" style={{padding:"14px 12px",textAlign:"center"}}>
-            <CalIcon size={16} style={{color:"#f59e0b",marginBottom:6}}/>
-            <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700}}>{agendados}</div>
-            <div style={{fontSize:".62rem",color:"var(--fg-faint)"}}>Agendados</div>
-          </div>
-          <div className="glass" style={{padding:"14px 12px",textAlign:"center"}}>
-            <TrendingUp size={16} style={{color:"#22c55e",marginBottom:6}}/>
-            <div className="font-display" style={{fontSize:"1.3rem",fontWeight:700}}>{publicados}</div>
-            <div style={{fontSize:".62rem",color:"var(--fg-faint)"}}>Publicados</div>
-          </div>
+          {/* Card 1 — uso do plano (anel) */}
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.05}} className="glass2" style={{padding:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
+              <CalIcon size={14} style={{color:"var(--fg-dim)"}}/>
+              <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Uso do plano</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
+              <div>
+                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{usados}</div>
+                <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>de {limite}</div>
+              </div>
+              <RingMetric value={usados} max={limite} color={pct>=90?"#ef4444":"#4F7DFF"}/>
+            </div>
+          </motion.div>
+
+          {/* Card 2 — total gerado (número simples, grande) */}
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.10}} className="glass2" style={{padding:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
+              <FileText size={14} style={{color:"var(--fg-dim)"}}/>
+              <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Total gerado</span>
+            </div>
+            <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1,position:"relative",zIndex:1}}>{total}</div>
+            <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3,position:"relative",zIndex:1}}>conteúdos no total</div>
+          </motion.div>
+
+          {/* Card 3 — atividade dos últimos 7 dias (barras) */}
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.15}} className="glass2" style={{padding:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
+              <TrendingUp size={14} style={{color:"var(--fg-dim)"}}/>
+              <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Últimos 7 dias</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
+              <div>
+                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{ultimos7.reduce((a,b)=>a+b,0)}</div>
+                <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>gerados</div>
+              </div>
+              <BarsMetric values={ultimos7} color="#4F7DFF" highlightIndex={6}/>
+            </div>
+          </motion.div>
+
+          {/* Card 4 — publicados (anel verde) */}
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.20}} className="glass2" style={{padding:"16px"}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
+              <CheckCircle2 size={14} style={{color:"var(--fg-dim)"}}/>
+              <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Publicados</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
+              <div>
+                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{publicados}</div>
+                <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>{agendados} agendados</div>
+              </div>
+              <RingMetric value={taxaConclusao} max={Math.max(total,1)} color="#22c55e"/>
+            </div>
+          </motion.div>
         </div>
 
         {/* CTA pra gerar conteúdo */}
