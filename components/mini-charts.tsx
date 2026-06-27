@@ -2,7 +2,7 @@
 import { motion } from "framer-motion"
 
 /* ── Anel de progresso fino, estilo "Activity" ── */
-export function RingMetric({ value, max, size = 56, stroke = 5, color = "#4F7DFF" }: { value: number; max: number; size?: number; stroke?: number; color?: string }) {
+export function RingMetric({ value, max, size = 68, stroke = 7, color = "#4F7DFF" }: { value: number; max: number; size?: number; stroke?: number; color?: string }) {
   const pct = Math.min(1, max > 0 ? value / max : 0)
   const r = (size - stroke) / 2
   const circ = 2 * Math.PI * r
@@ -52,7 +52,7 @@ export function SparklineMetric({ data, width = 70, height = 32, color = "#4F7DF
 }
 
 /* ── Barras verticais, estilo "Sleep" ── */
-export function BarsMetric({ values, width = 70, height = 32, color = "#4F7DFF", highlightIndex }: { values: number[]; width?: number; height?: number; color?: string; highlightIndex?: number }) {
+export function BarsMetric({ values, width = 78, height = 40, color = "#4F7DFF", highlightIndex }: { values: number[]; width?: number; height?: number; color?: string; highlightIndex?: number }) {
   const max = Math.max(...values, 1)
   const gap = 4
   const barWidth = (width - gap * (values.length - 1)) / values.length
@@ -70,7 +70,7 @@ export function BarsMetric({ values, width = 70, height = 32, color = "#4F7DFF",
             transition={{ duration: 0.5, delay: i * 0.04, ease: "easeOut" }}
             style={{
               width: barWidth,
-              borderRadius: 2,
+              borderRadius: 3,
               background: active ? color : "rgba(255,255,255,0.16)",
             }}
           />
