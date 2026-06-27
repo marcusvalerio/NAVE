@@ -119,14 +119,14 @@ export default function Dashboard() {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:22,position:"relative",zIndex:1}}>
 
           {/* Card 1 — uso do plano (anel) */}
-          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.05}} className="glass2" style={{padding:"16px"}}>
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.05}} className="glass2-metric">
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
-              <CalIcon size={14} style={{color:"var(--fg-dim)"}}/>
+              <CalIcon size={15} style={{color:"var(--fg-dim)"}}/>
               <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Uso do plano</span>
             </div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
               <div>
-                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{usados}</div>
+                <div className="font-display" style={{fontSize:"2.5rem",lineHeight:1}}>{usados}</div>
                 <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>de {limite}</div>
               </div>
               <RingMetric value={usados} max={limite} color={pct>=90?"#ef4444":"#4F7DFF"}/>
@@ -134,24 +134,24 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Card 2 — total gerado (número simples, grande) */}
-          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.10}} className="glass2" style={{padding:"16px"}}>
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.10}} className="glass2-metric">
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
-              <FileText size={14} style={{color:"var(--fg-dim)"}}/>
+              <FileText size={15} style={{color:"var(--fg-dim)"}}/>
               <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Total gerado</span>
             </div>
-            <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1,position:"relative",zIndex:1}}>{total}</div>
+            <div className="font-display" style={{fontSize:"2.5rem",lineHeight:1,position:"relative",zIndex:1}}>{total}</div>
             <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3,position:"relative",zIndex:1}}>conteúdos no total</div>
           </motion.div>
 
           {/* Card 3 — atividade dos últimos 7 dias (barras) */}
-          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.15}} className="glass2" style={{padding:"16px"}}>
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.15}} className="glass2-metric">
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
-              <TrendingUp size={14} style={{color:"var(--fg-dim)"}}/>
+              <TrendingUp size={15} style={{color:"var(--fg-dim)"}}/>
               <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Últimos 7 dias</span>
             </div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
               <div>
-                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{ultimos7.reduce((a,b)=>a+b,0)}</div>
+                <div className="font-display" style={{fontSize:"2.5rem",lineHeight:1}}>{ultimos7.reduce((a,b)=>a+b,0)}</div>
                 <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>gerados</div>
               </div>
               <BarsMetric values={ultimos7} color="#4F7DFF" highlightIndex={6}/>
@@ -159,14 +159,14 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Card 4 — publicados (anel verde) */}
-          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.20}} className="glass2" style={{padding:"16px"}}>
+          <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{duration:.3,delay:.20}} className="glass2-metric">
             <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:14,position:"relative",zIndex:1}}>
-              <CheckCircle2 size={14} style={{color:"var(--fg-dim)"}}/>
+              <CheckCircle2 size={15} style={{color:"var(--fg-dim)"}}/>
               <span style={{fontSize:".72rem",color:"var(--fg-dim)",fontWeight:500}}>Publicados</span>
             </div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",position:"relative",zIndex:1}}>
               <div>
-                <div className="font-display" style={{fontSize:"1.7rem",lineHeight:1}}>{publicados}</div>
+                <div className="font-display" style={{fontSize:"2.5rem",lineHeight:1}}>{publicados}</div>
                 <div style={{fontSize:".68rem",color:"var(--fg-faint)",marginTop:3}}>{agendados} agendados</div>
               </div>
               <RingMetric value={taxaConclusao} max={Math.max(total,1)} color="#22c55e"/>
