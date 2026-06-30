@@ -1,8 +1,8 @@
 "use client"
-import { useState, useRef } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
-import { ArrowRight, ArrowLeft, Scissors, Check } from "lucide-react"
+import { ArrowRight, ArrowLeft, Scissors, Check, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { supabaseBrowser } from "@/lib/supabase-client"
 
@@ -17,10 +17,9 @@ export default function Onboarding() {
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("")
-  const [codigoEnviado, setCodigoEnviado] = useState(false)
-  const [codigo, setCodigo] = useState(["", "", "", "", "", ""])
+  const [senha, setSenha] = useState("")
+  const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState("")
-  const inputsRef = useRef<(HTMLInputElement | null)[]>([])
 
   const [adminNome, setAdminNome] = useState("")
   const [adminWhatsapp, setAdminWhatsapp] = useState("")
@@ -44,83 +43,45 @@ export default function Onboarding() {
     servicos.length > 0,
     publico.length > 0 && !!tom,
     redes.length > 0,
-    aceitouPolitica,
+    aceitouPolitica && senha.length >= 6,
   ]
   const lastStep = steps.length - 1
 
-  const enviarCodigo = async () => {
-    if (!email.trim() || !aceitouPolitica) return
+  const finalizar = async () => {
+    if (!email.trim() || senha.length < 6 || !aceitouPolitica) return
     setLoading(true)
     setErro("")
     const supabase = supabaseBrowser()
 
-    const dadosOnboarding = {
-      nome, cidade, tipo, servicos, publico, tom,
-      palavras: palavrasInput.split(",").map(p => p.trim()).filter(Boolean),
-      redes, admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
-      consentimento_aceito_em: new Date().toISOString(),
-      consentimento_versao: "v2",
-    }
-
-    // Salva no banco — sobrevive mesmo sem troca de aba, e funciona dentro do PWA
-    const { error: dbError } = await supabase
-      .from("onboarding_pendente")
-      .upsert({ email, dados: dadosOnboarding }, { onConflict: "email" })
-
-    if (dbError) {
-      setLoading(false)
-      setErro("Não conseguimos salvar seus dados agora. Tenta de novo em alguns segundos.")
-      return
-    }
-
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })
-    setLoading(false)
-    if (error) {
-      setErro("Não conseguimos enviar o código agora. Tenta de novo em alguns segundos.")
-    } else {
-      setCodigoEnviado(true)
-      setTimeout(() => inputsRef.current[0]?.focus(), 100)
-    }
-  }
-
-  const handleDigit = (idx: number, val: string) => {
-    if (!/^\d?$/.test(val)) return
-    const novo = [...codigo]
-    novo[idx] = val
-    setCodigo(novo)
-    if (val && idx < 5) inputsRef.current[idx + 1]?.focus()
-    if (novo.every(d => d !== "")) confirmarCodigo(novo.join(""))
-  }
-
-  const handleKeyDown = (idx: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !codigo[idx] && idx > 0) inputsRef.current[idx - 1]?.focus()
-  }
-
-  const confirmarCodigo = async (token: string) => {
-    setLoading(true)
-    setErro("")
-    const supabase = supabaseBrowser()
-    const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" })
-    if (error) {
-      setLoading(false)
-      setErro("Código inválido ou expirado. Confere os números ou peça um novo código.")
-      setCodigo(["", "", "", "", "", ""])
-      inputsRef.current[0]?.focus()
-      return
-    }
-
-    // Cria a marca a partir dos dados pendentes (já autenticado nesse ponto)
-    await fetch("/api/marca", {
-      method: "POST",
-      body: JSON.stringify({
-        nome, cidade, tipo, servicos, publico, tom,
-        palavras: palavrasInput.split(",").map(p => p.trim()).filter(Boolean),
-        redes, admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
-        consentimento_aceito_em: new Date().toISOString(),
-        consentimento_versao: "v2",
-      }),
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: senha,
     })
-    await supabase.from("onboarding_pendente").delete().eq("email", email)
+
+    if (error) {
+      setLoading(false)
+      setErro(
+        error.message.includes("already registered") || error.message.includes("User already registered")
+          ? "Esse e-mail já tem uma conta. Tenta entrar em vez de criar uma nova."
+          : "Não conseguimos criar sua conta agora. Tenta de novo em alguns segundos."
+      )
+      return
+    }
+
+    if (data.user) {
+      const palavras = palavrasInput.split(",").map(p => p.trim()).filter(Boolean)
+      await fetch("/api/marca", {
+        method: "POST",
+        body: JSON.stringify({
+          nome, cidade, tipo, servicos, publico, tom, palavras, redes,
+          admin_nome: adminNome, admin_whatsapp: adminWhatsapp,
+          consentimento_aceito_em: new Date().toISOString(),
+          consentimento_versao: "v2",
+        }),
+      })
+    }
+
+    setLoading(false)
     router.push("/dashboard")
   }
 
@@ -222,78 +183,66 @@ export default function Onboarding() {
 
           {step===lastStep && (
             <motion.div key="5" initial={{opacity:0,x:12}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-12}} transition={{duration:.2}}>
-              {!codigoEnviado ? (
-                <>
-                  <div className="label" style={{marginBottom:10}}>ÚLTIMO PASSO</div>
-                  <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:10,letterSpacing:"-.015em",lineHeight:1.15}}>Qual seu e-mail?</h2>
-                  <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:24,lineHeight:1.5}}>Enviamos um código de acesso — sem senha, sem complicação.</p>
-                  <input className="inp" type="email" inputMode="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:18}} />
+              <div className="label" style={{marginBottom:10}}>ÚLTIMO PASSO</div>
+              <h2 className="font-display" style={{fontSize:"1.7rem",fontWeight:700,marginBottom:10,letterSpacing:"-.015em",lineHeight:1.15}}>Crie sua conta</h2>
+              <p style={{fontSize:".85rem",color:"var(--fg-dim)",marginBottom:24,lineHeight:1.5}}>E-mail e senha — é só isso que você vai usar pra entrar.</p>
 
-                  <button
-                    onClick={()=>setAceitouPolitica(v=>!v)}
-                    style={{display:"flex",alignItems:"flex-start",gap:10,background:"none",border:"none",cursor:"pointer",textAlign:"left",width:"100%"}}>
-                    <div style={{
-                      width:18,height:18,flexShrink:0,marginTop:1,borderRadius:5,
-                      border:`1px solid ${aceitouPolitica?"var(--acc)":"var(--border-h)"}`,
-                      background:aceitouPolitica?"var(--acc)":"transparent",
-                      display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"
-                    }}>
-                      {aceitouPolitica && <Check size={11} style={{color:"#fff"}}/>}
-                    </div>
-                    <span style={{fontSize:".78rem",color:"var(--fg-dim)",lineHeight:1.5}}>
-                      Li e aceito os <Link href="/termos" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
-                    </span>
-                  </button>
-                  {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginTop:14}}>{erro}</div>}
-                </>
-              ) : (
-                <div style={{textAlign:"center"}}>
-                  <h2 className="font-display" style={{fontSize:"1.5rem",fontWeight:700,marginBottom:10,letterSpacing:"-.01em"}}>Digite o código</h2>
-                  <p style={{fontSize:".84rem",color:"var(--fg-dim)",marginBottom:26,lineHeight:1.5}}>
-                    Enviamos um código de 6 dígitos para <strong style={{color:"var(--fg)"}}>{email}</strong>
-                  </p>
-                  <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:16}}>
-                    {codigo.map((d, i) => (
-                      <input
-                        key={i}
-                        ref={el => { inputsRef.current[i] = el }}
-                        className="inp"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={d}
-                        onChange={e=>handleDigit(i, e.target.value)}
-                        onKeyDown={e=>handleKeyDown(i, e)}
-                        style={{width:42,height:50,textAlign:"center",fontSize:"1.2rem",fontWeight:600,padding:0}}
-                      />
-                    ))}
-                  </div>
-                  {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginBottom:14}}>{erro}</div>}
-                  {loading && <div style={{fontSize:".8rem",color:"var(--fg-faint)",marginBottom:14}}>Verificando...</div>}
-                  <button onClick={enviarCodigo} disabled={loading} className="btn-ghost" style={{width:"100%"}}>Reenviar código</button>
+              <input className="inp" type="email" inputMode="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} style={{marginBottom:12}} />
+
+              <div style={{position:"relative",marginBottom:8}}>
+                <input
+                  className="inp"
+                  type={mostrarSenha ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Crie uma senha (mín. 6 caracteres)"
+                  value={senha}
+                  onChange={e=>setSenha(e.target.value)}
+                  style={{paddingRight:42}}
+                />
+                <button
+                  type="button"
+                  onClick={()=>setMostrarSenha(v=>!v)}
+                  style={{position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"var(--fg-faint)",cursor:"pointer",display:"flex"}}>
+                  {mostrarSenha ? <EyeOff size={16}/> : <Eye size={16}/>}
+                </button>
+              </div>
+
+              <button
+                onClick={()=>setAceitouPolitica(v=>!v)}
+                style={{display:"flex",alignItems:"flex-start",gap:10,background:"none",border:"none",cursor:"pointer",textAlign:"left",width:"100%",marginTop:14}}>
+                <div style={{
+                  width:18,height:18,flexShrink:0,marginTop:1,borderRadius:5,
+                  border:`1px solid ${aceitouPolitica?"var(--acc)":"var(--border-h)"}`,
+                  background:aceitouPolitica?"var(--acc)":"transparent",
+                  display:"flex",alignItems:"center",justifyContent:"center",transition:"all .12s"
+                }}>
+                  {aceitouPolitica && <Check size={11} style={{color:"#fff"}}/>}
                 </div>
-              )}
+                <span style={{fontSize:".78rem",color:"var(--fg-dim)",lineHeight:1.5}}>
+                  Li e aceito os <Link href="/termos" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Termos de Uso</Link> e a <Link href="/privacidade" target="_blank" style={{color:"var(--acc)",textDecoration:"underline"}} onClick={e=>e.stopPropagation()}>Política de Privacidade</Link>, e autorizo o uso dos meus dados para a prestação do serviço.
+                </span>
+              </button>
+              {erro && <div style={{fontSize:".8rem",color:"#ef4444",marginTop:14}}>{erro}</div>}
             </motion.div>
           )}
 
         </AnimatePresence>
       </main>
 
-      {!codigoEnviado && (
-        <footer style={{maxWidth:480,margin:"0 auto",width:"100%",padding:"0 24px 32px",display:"flex",gap:10,flexShrink:0}}>
-          {step>0 && (
-            <button onClick={()=>setStep(s=>s-1)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6}}>
-              <ArrowLeft size={14}/> Voltar
-            </button>
-          )}
-          <button
-            onClick={()=> step<lastStep ? setStep(s=>s+1) : enviarCodigo()}
-            disabled={!canNext[step] || loading}
-            className="btn-led"
-            style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-            {loading ? "Enviando..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Enviar código de acesso"}
+      <footer style={{maxWidth:480,margin:"0 auto",width:"100%",padding:"0 24px 32px",display:"flex",gap:10,flexShrink:0}}>
+        {step>0 && (
+          <button onClick={()=>setStep(s=>s-1)} className="btn-ghost" style={{display:"flex",alignItems:"center",gap:6}}>
+            <ArrowLeft size={14}/> Voltar
           </button>
-        </footer>
-      )}
+        )}
+        <button
+          onClick={()=> step<lastStep ? setStep(s=>s+1) : finalizar()}
+          disabled={!canNext[step] || loading}
+          className="btn-led"
+          style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+          {loading ? "Criando conta..." : step<lastStep ? <>Continuar <ArrowRight size={14}/></> : "Criar minha conta"}
+        </button>
+      </footer>
     </div>
   )
 }
